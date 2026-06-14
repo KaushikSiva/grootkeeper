@@ -2,12 +2,20 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from config import settings
-from groot_client import groot_available, run_groot_inference, smoke_mode_enabled
-from isaac_scene_client import get_scene_state_from_isaac_placeholder
-from ros2_client import publish_groot_actions_to_ros
-from safety import validate_before_execution
-from schemas import ExecuteResult, GrootObservation, GrootPlan
+try:
+    from .config import settings
+    from .groot_client import groot_available, run_groot_inference, smoke_mode_enabled
+    from .isaac_scene_client import get_scene_state_from_isaac_placeholder
+    from .ros2_client import publish_groot_actions_to_ros
+    from .safety import validate_before_execution
+    from .schemas import ExecuteResult, GrootObservation, GrootPlan
+except ImportError:
+    from config import settings
+    from groot_client import groot_available, run_groot_inference, smoke_mode_enabled
+    from isaac_scene_client import get_scene_state_from_isaac_placeholder
+    from ros2_client import publish_groot_actions_to_ros
+    from safety import validate_before_execution
+    from schemas import ExecuteResult, GrootObservation, GrootPlan
 
 
 @dataclass

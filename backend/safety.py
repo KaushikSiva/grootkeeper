@@ -2,7 +2,10 @@ from __future__ import annotations
 
 import math
 
-from schemas import GrootPlan
+try:
+    from .schemas import GrootPlan
+except ImportError:
+    from schemas import GrootPlan
 
 
 def validate_before_execution(plan: GrootPlan) -> str:

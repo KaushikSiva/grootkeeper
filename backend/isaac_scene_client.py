@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from schemas import SceneObject, SceneState
+try:
+    from .schemas import SceneObject, SceneState
+except ImportError:
+    from schemas import SceneObject, SceneState
 
 
 def get_scene_state_from_isaac_placeholder() -> SceneState:

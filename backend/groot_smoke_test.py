@@ -4,8 +4,12 @@ import importlib
 import sys
 from pathlib import Path
 
-from config import settings
-from system_checks import LIKELY_GROOT_MODULES, check_groot_repo
+try:
+    from .config import settings
+    from .system_checks import LIKELY_GROOT_MODULES, check_groot_repo
+except ImportError:
+    from config import settings
+    from system_checks import LIKELY_GROOT_MODULES, check_groot_repo
 
 
 def main() -> int:

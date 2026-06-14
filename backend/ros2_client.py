@@ -5,8 +5,12 @@ import os
 import shutil
 import subprocess
 
-from config import settings
-from schemas import GrootAction
+try:
+    from .config import settings
+    from .schemas import GrootAction
+except ImportError:
+    from config import settings
+    from schemas import GrootAction
 
 
 def _ros_env() -> dict[str, str]:

@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from schemas import GrootAction
+try:
+    from .schemas import GrootAction
+except ImportError:
+    from schemas import GrootAction
 
 
 def mock_plan_for_debug(command: str) -> list[GrootAction]:

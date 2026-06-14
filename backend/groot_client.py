@@ -5,8 +5,12 @@ import os
 import sys
 from pathlib import Path
 
-from config import settings
-from schemas import GrootAction, GrootObservation
+try:
+    from .config import settings
+    from .schemas import GrootAction, GrootObservation
+except ImportError:
+    from config import settings
+    from schemas import GrootAction, GrootObservation
 
 
 REAL_GROOT_API_MESSAGE = (

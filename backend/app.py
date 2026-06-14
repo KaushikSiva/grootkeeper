@@ -3,12 +3,20 @@ from __future__ import annotations
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
-from config import settings
-from groot_client import groot_available, smoke_mode_enabled
-from ros2_client import publish_stop_to_ros
-from schemas import TaskRequest
-from system_checks import get_system_status
-from task_orchestrator import OrchestratorError, execute_l3, plan_with_groot
+try:
+    from .config import settings
+    from .groot_client import groot_available, smoke_mode_enabled
+    from .ros2_client import publish_stop_to_ros
+    from .schemas import TaskRequest
+    from .system_checks import get_system_status
+    from .task_orchestrator import OrchestratorError, execute_l3, plan_with_groot
+except ImportError:
+    from config import settings
+    from groot_client import groot_available, smoke_mode_enabled
+    from ros2_client import publish_stop_to_ros
+    from schemas import TaskRequest
+    from system_checks import get_system_status
+    from task_orchestrator import OrchestratorError, execute_l3, plan_with_groot
 
 
 app = FastAPI(title=settings.app_name)

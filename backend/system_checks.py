@@ -6,8 +6,12 @@ import subprocess
 import sys
 from pathlib import Path
 
-from config import settings
-from schemas import SystemStatus
+try:
+    from .config import settings
+    from .schemas import SystemStatus
+except ImportError:
+    from config import settings
+    from schemas import SystemStatus
 
 
 LIKELY_GROOT_MODULES = (
