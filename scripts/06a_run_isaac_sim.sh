@@ -12,6 +12,12 @@ if [[ -z "${ISAAC_SIM_PYTHON:-}" ]]; then
   exit 1
 fi
 
+ROS_SETUP="/opt/ros/${ROS_DISTRO:-jazzy}/setup.bash"
+if [[ ! -f "${ROS_SETUP}" ]]; then
+  echo "ROS setup file missing: ${ROS_SETUP}"
+  exit 1
+fi
+
 ISAAC_ROOT="$(cd "$(dirname "${ISAAC_SIM_PYTHON}")" && pwd)"
 LAUNCHER=""
 
@@ -31,10 +37,15 @@ if [[ -z "${LAUNCHER}" ]]; then
   exit 1
 fi
 
+set +u
+source "${ROS_SETUP}"
+set -u
+
 export ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-${TRASHBOT_ROS_DOMAIN_ID:-42}}"
 
 echo "Launching Isaac Sim with:"
 echo "  launcher: ${LAUNCHER}"
+echo "  ROS setup: ${ROS_SETUP}"
 echo "  ROS_DOMAIN_ID: ${ROS_DOMAIN_ID}"
 echo
 echo "Inside Isaac Sim:"
