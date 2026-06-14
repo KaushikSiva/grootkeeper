@@ -164,10 +164,95 @@ def _state_dim(key: str, value: Any | None) -> int:
     return settings.groot_state_dim_overrides.get(key, DEFAULT_STATE_DIMS.get(key, 1))
 
 
+def _expected_state_dim(key: str) -> int:
+    return settings.groot_state_dim_overrides.get(key, DEFAULT_STATE_DIMS.get(key, 1))
+
+
+def _split_joint_position_series(value: Any) -> tuple[np.ndarray, np.ndarray] | None:
+    array = np.asarray(value, dtype=np.float32)
+    total_dim = _expected_state_dim("left_arm") + _expected_state_dim("right_arm")
+    if array.ndim == 0 or array.shape[-1] != total_dim:
+        return None
+    left_dim = _expected_state_dim("left_arm")
+    return array[..., :left_dim], array[..., left_dim:]
+
+
+def _combine_arm_series(left_arm: Any, right_arm: Any) -> np.ndarray | None:
+    left = np.asarray(left_arm, dtype=np.float32)
+    right = np.asarray(right_arm, dtype=np.float32)
+    if left.ndim == 0 or right.ndim == 0:
+        return None
+    if left.shape[:-1] != right.shape[:-1]:
+        return None
+    if left.shape[-1] != _expected_state_dim("left_arm"):
+        return None
+    if right.shape[-1] != _expected_state_dim("right_arm"):
+        return None
+    return np.concatenate((left, right), axis=-1)
+
+
+def _canonicalize_proprioception(
+    proprioception: dict[str, Any],
+    state_keys: list[str],
+) -> dict[str, Any]:
+    canonical = dict(proprioception)
+    requested = set(state_keys)
+
+    combined_source = (
+        canonical.get("joint_position")
+        if "joint_position" in canonical
+        else canonical.get("joint_positions")
+    )
+    split_series = _split_joint_position_series(combined_source) if combined_source is not None else None
+    if split_series is not None:
+        left_arm, right_arm = split_series
+        if "left_arm" in requested:
+            canonical["left_arm"] = left_arm
+        if "right_arm" in requested:
+            canonical["right_arm"] = right_arm
+
+    if "left_arm" in requested and "right_arm" in requested:
+        if "left_arm" in canonical and _state_dim("left_arm", canonical["left_arm"]) == _expected_state_dim(
+            "joint_position"
+        ):
+            split_left = _split_joint_position_series(canonical["left_arm"])
+            if split_left is not None:
+                canonical["left_arm"], canonical["right_arm"] = split_left
+        elif "right_arm" in canonical and _state_dim("right_arm", canonical["right_arm"]) == _expected_state_dim(
+            "joint_position"
+        ):
+            split_right = _split_joint_position_series(canonical["right_arm"])
+            if split_right is not None:
+                canonical["left_arm"], canonical["right_arm"] = split_right
+
+    if "joint_position" in requested and "joint_position" not in canonical:
+        combined = _combine_arm_series(canonical.get("left_arm"), canonical.get("right_arm"))
+        if combined is not None:
+            canonical["joint_position"] = combined
+
+    return canonical
+
+
+def _raise_state_dim_error(key: str, actual_dim: int, expected_dim: int) -> None:
+    hint = ""
+    if key in {"left_arm", "right_arm"} and actual_dim == _expected_state_dim("joint_position"):
+        hint = (
+            " Received a combined arm vector where a per-arm vector was expected;"
+            " send `joint_position` or split the state into `left_arm` and `right_arm`."
+        )
+    raise ValueError(
+        f"Invalid proprioception width for `{key}`: expected {expected_dim}, got {actual_dim}.{hint}"
+    )
+
+
 def _normalize_state_series(value: Any | None, horizon: int, key: str) -> np.ndarray:
-    array = np.asarray(value if value is not None else np.zeros(_state_dim(key, value)), dtype=np.float32)
+    expected_dim = _expected_state_dim(key)
+    array = np.asarray(value if value is not None else np.zeros(expected_dim), dtype=np.float32)
     if array.ndim == 0:
         array = array.reshape(1)
+    actual_dim = int(array.shape[-1]) if array.ndim > 0 else 1
+    if actual_dim != expected_dim:
+        _raise_state_dim_error(key, actual_dim, expected_dim)
     if array.ndim == 1:
         array = np.repeat(array[np.newaxis, :], horizon, axis=0)
     elif array.ndim == 2 and array.shape[0] != horizon:
@@ -202,7 +287,10 @@ def _build_policy_observation(
         }
 
     if state_cfg["modality_keys"]:
-        proprio = observation.proprioception or {}
+        proprio = _canonicalize_proprioception(
+            observation.proprioception or {},
+            state_cfg["modality_keys"],
+        )
         policy_observation["state"] = {
             key: _normalize_state_series(proprio.get(key), state_horizon, key)[np.newaxis, ...]
             for key in state_cfg["modality_keys"]
@@ -331,7 +419,10 @@ def run_groot_inference(observation: GrootObservation) -> list[GrootAction]:
         ]
 
     modality_config = _get_modality_config()
-    policy_observation = _build_policy_observation(observation, modality_config)
+    try:
+        policy_observation = _build_policy_observation(observation, modality_config)
+    except ValueError as exc:
+        raise RuntimeError(f"Invalid GR00T observation payload: {exc}") from exc
 
     client = _policy_client()
     try:
