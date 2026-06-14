@@ -36,6 +36,7 @@ DEFAULT_G1_PRIM_PATH = os.getenv("G1_ROBOT_PRIM", "/World/G1")
 DEFAULT_EXECUTION_MODE = os.getenv("G1_EMBODIMENT_MODE", "fixed_upper_body_pick_place")
 DEFAULT_BOTTLE_PRIM_PATH = "/World/plastic_bottle"
 DEFAULT_DUSTBIN_PRIM_PATH = "/World/dustbin"
+DEFAULT_JOINT_DELTA_GAIN = float(os.getenv("G1_JOINT_DELTA_GAIN", "7.5"))
 DEFAULT_ARM_HINTS = (
     "left_shoulder",
     "left_elbow",
@@ -118,6 +119,9 @@ class G1JointReplayExecutor:
         self.initial_bottle_position = Gf.Vec3d(0.72, 0.14, 0.75)
         self.dustbin_position = Gf.Vec3d(1.05, -0.42, 0.19)
         self.carry_height = 0.96
+        self.joint_delta_gain = DEFAULT_JOINT_DELTA_GAIN
+        self.base_joint_positions: list[float] = []
+        self.current_joint_targets: list[float] = []
 
     def start(self) -> None:
         if not rclpy.ok():
@@ -146,6 +150,8 @@ class G1JointReplayExecutor:
         self.frame_index = 0
         self._initialized = False
         self.completed = False
+        self.base_joint_positions = []
+        self.current_joint_targets = []
         print("[g1_joint_replay_executor] Stopped.")
 
     def load_payload(self, payload: dict[str, Any]) -> None:
@@ -257,9 +263,12 @@ class G1JointReplayExecutor:
             return
 
         self.active_joint_count = len(self.arm_joint_indices)
+        self.base_joint_positions = list(self.articulation.get_joint_positions())
+        self.current_joint_targets = list(self.base_joint_positions)
         self._initialized = True
         print(f"[g1_joint_replay_executor] Articulation initialized at {self.robot_prim_path}")
         print(f"[g1_joint_replay_executor] Using arm joints: {self.arm_joint_names}")
+        print(f"[g1_joint_replay_executor] Joint delta gain: {self.joint_delta_gain}")
 
     def _resolve_arm_joint_indices(self, dof_names: list[str]) -> tuple[list[str], list[int]]:
         override = _load_arm_joint_override()
@@ -286,20 +295,23 @@ class G1JointReplayExecutor:
     def _apply_frame(self, frame: ReplayFrame) -> None:
         if self.articulation is None or self.active_joint_count not in {6, 7}:
             return
-        try:
-            current_positions = list(self.articulation.get_joint_positions())
-        except Exception as exc:
-            self._log_once(
-                "joint_read_failed",
-                f"[g1_joint_replay_executor] Failed to read joint positions: {exc}",
-            )
-            return
+        if not self.current_joint_targets:
+            try:
+                self.current_joint_targets = list(self.articulation.get_joint_positions())
+            except Exception as exc:
+                self._log_once(
+                    "joint_read_failed",
+                    f"[g1_joint_replay_executor] Failed to read joint positions: {exc}",
+                )
+                return
 
         for offset, joint_index in enumerate(self.arm_joint_indices):
-            current_positions[joint_index] = frame.joint_position[offset]
+            current_value = self.current_joint_targets[joint_index]
+            next_value = current_value + (frame.joint_position[offset] * self.joint_delta_gain)
+            self.current_joint_targets[joint_index] = next_value
 
         try:
-            self.articulation.set_joint_positions(current_positions)
+            self.articulation.set_joint_positions(self.current_joint_targets)
         except Exception as exc:
             self._log_once(
                 "joint_write_failed",
