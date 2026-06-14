@@ -82,7 +82,7 @@ def check_groot_import() -> tuple[bool, str]:
 
 
 def check_ros2() -> tuple[bool, str]:
-    return _run_command(["ros2", "--version"])
+    return _run_command(["ros2", "--help"])
 
 
 def check_isaac_sim_config() -> tuple[bool, str]:
