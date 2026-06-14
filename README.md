@@ -87,6 +87,7 @@ chmod +x scripts/*.sh
 ./scripts/05_check_ros2.sh
 ./scripts/06_check_isaac_sim.sh
 ./scripts/07_build_ros2_ws.sh
+./scripts/08a_run_groot_policy_server.sh
 ./scripts/08_run_backend_groot.sh
 ```
 
@@ -96,7 +97,7 @@ In another GB10 terminal:
 cd grootkeeper
 ./scripts/09_test_backend_status.sh
 # Real GR00T planning test. Requires backend/groot_client.py to be wired
-# to the official NVIDIA Isaac-GR00T inference API.
+# to a running NVIDIA Isaac-GR00T policy server.
 ./scripts/10_test_groot_plan.sh
 # Deterministic diagnostic path. Requires exporting GROOT_SMOKE_ONLY=1
 # before starting the backend in the first terminal.
@@ -118,7 +119,7 @@ http://<gb10-ip>:8000
 ## Where the real integration points are
 
 - `backend/groot_client.py`
-  This is the first file to edit when GR00T import works but the real policy API is not mapped yet.
+  This is the policy-server client adapter. It converts scene/image/proprio inputs into the official GR00T observation schema and decodes returned action chunks.
 - `backend/task_orchestrator.py`
   This enforces the GR00T-first path, safety gate, and ROS 2 publish flow.
 - `ros2_ws/src/trashbot_bridge/trashbot_bridge/isaac_execution_listener.py`
@@ -131,7 +132,8 @@ http://<gb10-ip>:8000
 - Run `./scripts/checkpoint_all_l3.sh` for the loud checkpoint sweep.
 - Read `docs/l3_checkpoints.md` for verification order.
 - Read `docs/failure_debugging.md` for the common failure cases.
-- If the backend returns `Real GR00T policy API not wired...`, open `backend/groot_client.py` and map the official NVIDIA Isaac-GR00T inference API there.
+- If `/status` says the policy server is unavailable, start `./scripts/08a_run_groot_policy_server.sh` and verify `GROOT_SERVER_HOST` / `GROOT_SERVER_PORT`.
+- If `/system/status` shows `groot_server_ok=false`, the backend cannot reach the GR00T ZeroMQ server yet.
 
 ## Command Summary
 

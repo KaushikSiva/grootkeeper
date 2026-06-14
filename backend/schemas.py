@@ -20,6 +20,9 @@ class SceneState(BaseModel):
 
 class TaskRequest(BaseModel):
     command: str
+    image_path: str | None = None
+    proprioception: dict[str, Any] = Field(default_factory=dict)
+    scene_override: SceneState | None = None
 
 
 class GrootObservation(BaseModel):
@@ -61,6 +64,7 @@ class SystemStatus(BaseModel):
     cuda_ok: bool
     groot_repo_ok: bool
     groot_import_ok: bool
+    groot_server_ok: bool
     ros2_ok: bool
     isaac_sim_configured: bool
     notes: list[str]

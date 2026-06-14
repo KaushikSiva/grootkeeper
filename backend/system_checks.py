@@ -13,6 +13,11 @@ except ImportError:
     from config import settings
     from schemas import SystemStatus
 
+try:
+    from .groot_policy_client import PolicyClient
+except ImportError:
+    from groot_policy_client import PolicyClient
+
 
 LIKELY_GROOT_MODULES = (
     "gr00t.policy",
@@ -111,6 +116,27 @@ def check_ros2() -> tuple[bool, str]:
     return True, f"ROS 2 CLI available. Configured ROS_DISTRO={distro}"
 
 
+def check_groot_server() -> tuple[bool, str]:
+    client = PolicyClient(
+        host=settings.groot_server_host,
+        port=settings.groot_server_port,
+        timeout_ms=max(settings.groot_server_timeout_ms, 1000),
+        api_token=settings.groot_server_api_token or None,
+    )
+    try:
+        if client.ping():
+            return (
+                True,
+                f"GROOT policy server reachable at tcp://{settings.groot_server_host}:{settings.groot_server_port}",
+            )
+        return (
+            False,
+            f"GROOT policy server unavailable at tcp://{settings.groot_server_host}:{settings.groot_server_port}",
+        )
+    finally:
+        client.close()
+
+
 def check_isaac_sim_config() -> tuple[bool, str]:
     if not settings.isaac_sim_python:
         return False, "ISAAC_SIM_PYTHON is not set."
@@ -126,6 +152,7 @@ def get_system_status() -> SystemStatus:
     cuda_ok, cuda_note = check_cuda()
     groot_repo_ok, groot_repo_note = check_groot_repo()
     groot_import_ok, groot_import_note = check_groot_import()
+    groot_server_ok, groot_server_note = check_groot_server()
     ros2_ok, ros2_note = check_ros2()
     isaac_ok, isaac_note = check_isaac_sim_config()
 
@@ -134,6 +161,7 @@ def get_system_status() -> SystemStatus:
         cuda_ok=cuda_ok,
         groot_repo_ok=groot_repo_ok,
         groot_import_ok=groot_import_ok,
+        groot_server_ok=groot_server_ok,
         ros2_ok=ros2_ok,
         isaac_sim_configured=isaac_ok,
         notes=[
@@ -141,6 +169,7 @@ def get_system_status() -> SystemStatus:
             cuda_note,
             groot_repo_note,
             groot_import_note,
+            groot_server_note,
             ros2_note,
             isaac_note,
         ],

@@ -21,7 +21,7 @@ def _ros_env() -> dict[str, str]:
 
 def _publish_string_message(topic: str, payload: dict[str, object]) -> str:
     if shutil.which("ros2") is None:
-        return "ROS 2 CLI unavailable. Install/source ROS 2 and verify `ros2 --version`."
+        return "ROS 2 CLI unavailable. Install/source ROS 2 and verify `ros2 --help`."
 
     message = json.dumps(payload)
     command = [

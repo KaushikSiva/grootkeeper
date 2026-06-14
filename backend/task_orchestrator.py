@@ -3,19 +3,17 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 try:
-    from .config import settings
     from .groot_client import groot_available, run_groot_inference, smoke_mode_enabled
-    from .isaac_scene_client import get_scene_state_from_isaac_placeholder
+    from .isaac_scene_client import get_scene_state
     from .ros2_client import publish_groot_actions_to_ros
     from .safety import validate_before_execution
-    from .schemas import ExecuteResult, GrootObservation, GrootPlan
+    from .schemas import ExecuteResult, GrootObservation, GrootPlan, TaskRequest
 except ImportError:
-    from config import settings
     from groot_client import groot_available, run_groot_inference, smoke_mode_enabled
-    from isaac_scene_client import get_scene_state_from_isaac_placeholder
+    from isaac_scene_client import get_scene_state
     from ros2_client import publish_groot_actions_to_ros
     from safety import validate_before_execution
-    from schemas import ExecuteResult, GrootObservation, GrootPlan
+    from schemas import ExecuteResult, GrootObservation, GrootPlan, TaskRequest
 
 
 @dataclass
@@ -27,20 +25,25 @@ class OrchestratorError(Exception):
         return self.message
 
 
-def create_observation(command: str) -> GrootObservation:
-    scene = get_scene_state_from_isaac_placeholder()
-    return GrootObservation(command=command, scene=scene, proprioception={})
+def create_observation(request: TaskRequest) -> GrootObservation:
+    scene = request.scene_override or get_scene_state()
+    return GrootObservation(
+        command=request.command,
+        scene=scene,
+        image_path=request.image_path,
+        proprioception=request.proprioception,
+    )
 
 
-def plan_with_groot(command: str, require_real: bool = True) -> GrootPlan:
+def plan_with_groot(request: TaskRequest, require_real: bool = True) -> GrootPlan:
     available, note = groot_available()
     if not available and not smoke_mode_enabled():
         raise OrchestratorError(
             message=f"GR00T unavailable: {note}",
             next_steps=[
-                "Run ./scripts/03_clone_or_check_groot.sh",
-                "Run ./scripts/04_groot_smoke_test.sh",
-                "Open backend/groot_client.py if imports succeed but inference is not mapped",
+                "Start the GR00T policy server with ./scripts/08a_run_groot_policy_server.sh.",
+                "Run ./scripts/09_test_backend_status.sh and confirm groot_server_ok=true.",
+                "Verify GROOT_SERVER_HOST / GROOT_SERVER_PORT in .env match the server process.",
             ],
         )
 
@@ -54,32 +57,32 @@ def plan_with_groot(command: str, require_real: bool = True) -> GrootPlan:
             ],
         )
 
-    observation = create_observation(command)
+    observation = create_observation(request)
     try:
         actions = run_groot_inference(observation)
     except RuntimeError as exc:
         raise OrchestratorError(
             message=str(exc),
             next_steps=[
-                "Confirm GROOT_REPO_DIR and GROOT_CHECKPOINT in .env.",
-                "Run python backend/groot_smoke_test.py.",
-                "Open backend/groot_client.py and wire the official NVIDIA Isaac-GR00T inference API.",
+                "Confirm the GR00T policy server is running and reachable.",
+                "Verify the server embodiment tag and modality config match the observations you send.",
+                "Provide real image_path / proprioception inputs or publish live scene state before retrying.",
             ],
         ) from exc
 
     status = "smoke_only" if smoke_mode_enabled() else "ok"
     return GrootPlan(
-        command=command,
+        command=request.command,
         observation=observation,
         actions=actions,
-        model_backend=settings.model_backend,
-        checkpoint=settings.groot_checkpoint,
+        model_backend="groot",
+        checkpoint="policy_server",
         status=status,
     )
 
 
-def execute_l3(command: str) -> ExecuteResult:
-    plan = plan_with_groot(command=command, require_real=True)
+def execute_l3(request: TaskRequest) -> ExecuteResult:
+    plan = plan_with_groot(request=request, require_real=True)
     safety_status = validate_before_execution(plan)
     if safety_status != "approved":
         raise OrchestratorError(
@@ -99,7 +102,7 @@ def execute_l3(command: str) -> ExecuteResult:
     )
 
     return ExecuteResult(
-        command=command,
+        command=request.command,
         plan=plan,
         safety_status=safety_status,
         ros2_publish_status=ros2_status,

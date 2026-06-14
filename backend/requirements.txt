@@ -5,3 +5,7 @@ pyyaml
 numpy
 requests
 python-multipart
+Pillow
+msgpack
+msgpack-numpy
+pyzmq

@@ -1,14 +1,20 @@
 from __future__ import annotations
 
+import ast
+import json
+import os
+import shutil
+import subprocess
+
 try:
+    from .config import settings
     from .schemas import SceneObject, SceneState
 except ImportError:
+    from config import settings
     from schemas import SceneObject, SceneState
 
 
-def get_scene_state_from_isaac_placeholder() -> SceneState:
-    # Replace this placeholder with a live Isaac Sim ROS 2 scene_state subscription
-    # or an Isaac Python world query once the GB10 runtime is wired end-to-end.
+def _placeholder_scene_state() -> SceneState:
     return SceneState(
         source="isaac_pose_placeholder",
         objects=[
@@ -52,14 +58,86 @@ def get_scene_state_from_isaac_placeholder() -> SceneState:
     )
 
 
+def _scene_state_from_payload(payload: dict[str, object]) -> SceneState:
+    return SceneState.model_validate(payload)
+
+
+def _parse_ros_string_payload(output: str) -> dict[str, object]:
+    if not output.strip():
+        raise ValueError("Empty ROS scene_state output")
+
+    for line in output.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("data:"):
+            raw = stripped.split("data:", 1)[1].strip()
+            try:
+                decoded = ast.literal_eval(raw)
+            except Exception:
+                decoded = raw.strip("\"'")
+            return json.loads(decoded)
+
+    return json.loads(output)
+
+
+def _read_scene_state_from_file() -> SceneState | None:
+    path = settings.groot_scene_state_path.strip()
+    if not path:
+        return None
+    if not os.path.exists(path):
+        return None
+    with open(path, "r", encoding="utf-8") as handle:
+        return _scene_state_from_payload(json.load(handle))
+
+
+def _read_scene_state_from_ros() -> SceneState | None:
+    if shutil.which("ros2") is None:
+        return None
+
+    command = [
+        "ros2",
+        "topic",
+        "echo",
+        "--once",
+        settings.groot_scene_topic,
+        "std_msgs/msg/String",
+    ]
+
+    try:
+        completed = subprocess.run(
+            command,
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=settings.groot_scene_timeout_sec,
+            env={**os.environ, "ROS_DOMAIN_ID": str(settings.ros_domain_id)},
+        )
+    except subprocess.TimeoutExpired:
+        return None
+
+    if completed.returncode != 0:
+        return None
+
+    payload = _parse_ros_string_payload(completed.stdout or completed.stderr or "")
+    scene = _scene_state_from_payload(payload)
+    if scene.source == "isaac_pose_placeholder":
+        scene.source = f"ros_topic:{settings.groot_scene_topic}"
+    return scene
+
+
+def get_scene_state() -> SceneState:
+    for loader in (_read_scene_state_from_file, _read_scene_state_from_ros):
+        scene = loader()
+        if scene is not None:
+            return scene
+    return _placeholder_scene_state()
+
+
 def publish_expected_scene_to_ros_placeholder() -> dict[str, object]:
-    # Replace this placeholder with ROS 2 publishing from Isaac Sim, either through the
-    # ROS 2 bridge action graph or an Isaac-side Python node.
     return {
-        "status": "placeholder_only",
+        "status": "expect_live_scene_topic",
         "notes": [
-            "Publish /trashbot/scene_state from Isaac Sim once omni.isaac.ros2_bridge is enabled.",
-            "Mirror the SceneState schema as JSON in std_msgs/String for the first integration pass.",
-            "Move from this placeholder to live Isaac object pose output before the final demo.",
+            f"Publish {settings.groot_scene_topic} from Isaac Sim as JSON in std_msgs/String.",
+            "Optionally write the same payload to GROOT_SCENE_STATE_PATH for file-based fallback.",
+            "If neither live topic nor file is present, the backend falls back to its built-in scene skeleton.",
         ],
     }
