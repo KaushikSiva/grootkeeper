@@ -9,10 +9,12 @@ from typing import Any
 try:
     import omni.kit.app
     import omni.timeline
+    import omni.usd
     try:
         from omni.isaac.core.articulations import Articulation
     except Exception:
         from isaacsim.core.prims import SingleArticulation as Articulation
+    from pxr import Gf, UsdGeom
 except Exception as exc:  # pragma: no cover - only importable inside Isaac Sim
     raise RuntimeError(
         "Could not import Isaac articulation APIs. Run this inside Isaac Sim Script Editor and "
@@ -32,6 +34,8 @@ except Exception as exc:  # pragma: no cover - only importable inside Isaac Sim
 
 DEFAULT_G1_PRIM_PATH = os.getenv("G1_ROBOT_PRIM", "/World/G1")
 DEFAULT_EXECUTION_MODE = os.getenv("G1_EMBODIMENT_MODE", "fixed_upper_body_pick_place")
+DEFAULT_BOTTLE_PRIM_PATH = "/World/plastic_bottle"
+DEFAULT_DUSTBIN_PRIM_PATH = "/World/dustbin"
 DEFAULT_ARM_HINTS = (
     "left_shoulder",
     "left_elbow",
@@ -108,6 +112,12 @@ class G1JointReplayExecutor:
         self._app_subscription = None
         self._initialized = False
         self._last_logged_state = ""
+        self.completed = False
+        self.bottle_prim_path = DEFAULT_BOTTLE_PRIM_PATH
+        self.dustbin_prim_path = DEFAULT_DUSTBIN_PRIM_PATH
+        self.initial_bottle_position = Gf.Vec3d(0.72, 0.14, 0.75)
+        self.dustbin_position = Gf.Vec3d(1.05, -0.42, 0.19)
+        self.carry_height = 0.96
 
     def start(self) -> None:
         if not rclpy.ok():
@@ -135,6 +145,7 @@ class G1JointReplayExecutor:
         self.frames = []
         self.frame_index = 0
         self._initialized = False
+        self.completed = False
         print("[g1_joint_replay_executor] Stopped.")
 
     def load_payload(self, payload: dict[str, Any]) -> None:
@@ -156,6 +167,8 @@ class G1JointReplayExecutor:
 
         self.frames = frames
         self.frame_index = 0
+        self.completed = False
+        self._cache_scene_targets()
 
         summary = {
             "robot": "unitree_g1",
@@ -174,7 +187,7 @@ class G1JointReplayExecutor:
         if not self.frames:
             print(
                 "[g1_joint_replay_executor] No replayable `joint_position` frames found. "
-                "Expected 7-element per-step vectors."
+                "Expected 6- or 7-element per-step vectors."
             )
 
     def _on_update(self, _event: Any) -> None:
@@ -189,6 +202,10 @@ class G1JointReplayExecutor:
             self._log_once("waiting", "[g1_joint_replay_executor] Waiting for replay frames...")
             return
 
+        if self.completed:
+            self._log_once("completed", "[g1_joint_replay_executor] Replay complete. Waiting for next payload.")
+            return
+
         timeline = omni.timeline.get_timeline_interface()
         if hasattr(timeline, "is_playing") and not timeline.is_playing():
             self._log_once(
@@ -197,9 +214,24 @@ class G1JointReplayExecutor:
             )
             return
 
+        if self.frame_index >= len(self.frames):
+            self.completed = True
+            self._place_bottle_in_bin()
+            if self.node is not None:
+                self.node.publish_log(
+                    {
+                        "robot": "unitree_g1",
+                        "mode": "isaac_joint_replay",
+                        "status": "complete",
+                        "replayed_frames": len(self.frames),
+                    }
+                )
+            return
+
         frame = self.frames[self.frame_index]
         self._apply_frame(frame)
-        self.frame_index = (self.frame_index + 1) % len(self.frames)
+        self._update_demo_object_motion()
+        self.frame_index += 1
 
     def _try_initialize_articulation(self) -> None:
         try:
@@ -274,6 +306,94 @@ class G1JointReplayExecutor:
                 f"[g1_joint_replay_executor] Failed to set joint positions: {exc}",
             )
             return
+
+    def _cache_scene_targets(self) -> None:
+        stage = omni.usd.get_context().get_stage()
+        if stage is None:
+            return
+        bottle_prim = stage.GetPrimAtPath(self.bottle_prim_path)
+        dustbin_prim = stage.GetPrimAtPath(self.dustbin_prim_path)
+        self.initial_bottle_position = self._extract_translation(bottle_prim, self.initial_bottle_position)
+        self.dustbin_position = self._extract_translation(dustbin_prim, self.dustbin_position)
+        self._set_translation(bottle_prim, self.initial_bottle_position)
+
+    def _extract_translation(self, prim, fallback: Gf.Vec3d) -> Gf.Vec3d:
+        if prim is None or not prim.IsValid():
+            return fallback
+        xformable = UsdGeom.Xformable(prim)
+        for op in xformable.GetOrderedXformOps():
+            if op.GetOpType() == UsdGeom.XformOp.TypeTranslate:
+                value = op.Get()
+                if value is not None:
+                    return Gf.Vec3d(value[0], value[1], value[2])
+        return fallback
+
+    def _set_translation(self, prim, value: Gf.Vec3d) -> None:
+        if prim is None or not prim.IsValid():
+            return
+        xformable = UsdGeom.Xformable(prim)
+        translate_op = None
+        for op in xformable.GetOrderedXformOps():
+            if op.GetOpType() == UsdGeom.XformOp.TypeTranslate:
+                translate_op = op
+                break
+        if translate_op is None:
+            translate_op = xformable.AddTranslateOp()
+        translate_op.Set(value)
+
+    def _update_demo_object_motion(self) -> None:
+        if not self.frames:
+            return
+        stage = omni.usd.get_context().get_stage()
+        if stage is None:
+            return
+        bottle_prim = stage.GetPrimAtPath(self.bottle_prim_path)
+        if not bottle_prim or not bottle_prim.IsValid():
+            return
+
+        ratio = self.frame_index / max(len(self.frames) - 1, 1)
+        if ratio < 0.55:
+            bottle_position = self.initial_bottle_position
+        elif ratio < 0.72:
+            lift = (ratio - 0.55) / 0.17
+            bottle_position = Gf.Vec3d(
+                self.initial_bottle_position[0],
+                self.initial_bottle_position[1],
+                self.initial_bottle_position[2] + 0.18 * lift,
+            )
+        else:
+            carry = min((ratio - 0.72) / 0.28, 1.0)
+            source = Gf.Vec3d(
+                self.initial_bottle_position[0],
+                self.initial_bottle_position[1],
+                self.carry_height,
+            )
+            target = Gf.Vec3d(
+                self.dustbin_position[0],
+                self.dustbin_position[1],
+                self.dustbin_position[2] + 0.16,
+            )
+            bottle_position = Gf.Vec3d(
+                source[0] + (target[0] - source[0]) * carry,
+                source[1] + (target[1] - source[1]) * carry,
+                source[2] + (target[2] - source[2]) * carry,
+            )
+
+        self._set_translation(bottle_prim, bottle_position)
+
+    def _place_bottle_in_bin(self) -> None:
+        stage = omni.usd.get_context().get_stage()
+        if stage is None:
+            return
+        bottle_prim = stage.GetPrimAtPath(self.bottle_prim_path)
+        if not bottle_prim or not bottle_prim.IsValid():
+            return
+        final_position = Gf.Vec3d(
+            self.dustbin_position[0],
+            self.dustbin_position[1],
+            self.dustbin_position[2] + 0.1,
+        )
+        self._set_translation(bottle_prim, final_position)
 
     def _log_once(self, key: str, message: str) -> None:
         if self._last_logged_state == key:
