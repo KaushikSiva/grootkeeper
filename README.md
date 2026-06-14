@@ -6,6 +6,8 @@
 
 This repo is intentionally not adapter-only. The backend refuses to pretend that real NVIDIA Isaac-GR00T policy inference is wired when it is not. The main endpoint is `/execute_l3`.
 
+Target simulated embodiment: `Unitree G1` in Isaac Sim.
+
 ## What Mac does
 
 - VS Code / Codex development
@@ -32,6 +34,7 @@ This repo is intentionally not adapter-only. The backend refuses to pretend that
 - Isaac Sim installed
 - Isaac-GR00T cloned and installed using the official NVIDIA instructions
 - Access to the configured GR00T checkpoint
+- A Unitree G1 USD asset path available for Isaac Sim and set in `G1_USD_PATH`
 
 ## Step 1: push repo from Mac
 
@@ -65,6 +68,8 @@ ssh <user>@<gb10-ip>
 
 ## Step 10: open dashboard from Mac
 
+This README step is not the same thing as `./scripts/10_test_groot_plan.sh`.
+
 ## Step 11: execute
 
 ### On GB10
@@ -90,7 +95,12 @@ In another GB10 terminal:
 ```bash
 cd grootkeeper
 ./scripts/09_test_backend_status.sh
+# Real GR00T planning test. Requires backend/groot_client.py to be wired
+# to the official NVIDIA Isaac-GR00T inference API.
 ./scripts/10_test_groot_plan.sh
+# Deterministic diagnostic path. Requires exporting GROOT_SMOKE_ONLY=1
+# before starting the backend in the first terminal.
+./scripts/10_test_groot_smoke.sh
 ```
 
 ### On Mac
@@ -112,9 +122,9 @@ http://<gb10-ip>:8000
 - `backend/task_orchestrator.py`
   This enforces the GR00T-first path, safety gate, and ROS 2 publish flow.
 - `ros2_ws/src/trashbot_bridge/trashbot_bridge/isaac_execution_listener.py`
-  This is where GR00T actions must be mapped to the Isaac robot controller.
+  This is where GR00T actions must be mapped to the Unitree G1 Isaac controller.
 - `isaac/create_trashbot_scene.py`
-  This is the Isaac-side skeleton for the scene, camera, and scene-state publishing.
+  This is the Isaac-side skeleton for the scene, Unitree G1 asset reference, camera, and scene-state publishing.
 
 ## What can fail and how to debug
 

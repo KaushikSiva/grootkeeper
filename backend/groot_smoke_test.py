@@ -6,10 +6,10 @@ from pathlib import Path
 
 try:
     from .config import settings
-    from .system_checks import LIKELY_GROOT_MODULES, check_groot_repo
+    from .system_checks import LIKELY_GROOT_MODULES, check_groot_import, check_groot_repo
 except ImportError:
     from config import settings
-    from system_checks import LIKELY_GROOT_MODULES, check_groot_repo
+    from system_checks import LIKELY_GROOT_MODULES, check_groot_import, check_groot_repo
 
 
 def main() -> int:
@@ -26,24 +26,18 @@ def main() -> int:
     if repo_dir not in sys.path:
         sys.path.insert(0, repo_dir)
 
-    import_errors: list[str] = []
-    for module_name in LIKELY_GROOT_MODULES:
-        try:
-            importlib.import_module(module_name)
-            print(f"Imported GR00T module candidate successfully: {module_name}")
-            print("GR00T import smoke test passed.")
-            return 0
-        except Exception as exc:
-            import_errors.append(f"{module_name}: {exc}")
+    import_ok, import_note = check_groot_import()
+    if import_ok:
+        print(import_note)
+        print("GR00T import smoke test passed.")
+        return 0
 
     print("GR00T import smoke test failed.")
-    print("Tried modules:")
-    for error in import_errors:
-        print(f"  - {error}")
+    print(import_note)
     print("Debug next:")
     print("  1. Follow the official Isaac-GR00T install instructions exactly.")
     print("  2. Verify the Python interpreter matches the GR00T install environment.")
-    print("  3. Confirm any editable installs or exported PYTHONPATH entries are active.")
+    print("  3. Confirm runtime dependencies like torch are installed in that environment.")
     return 1
 
 

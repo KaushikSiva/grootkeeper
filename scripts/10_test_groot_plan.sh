@@ -7,6 +7,11 @@ if [[ -f .env ]]; then
   set +a
 fi
 
+if [[ "${GROOT_SMOKE_ONLY:-0}" == "1" ]]; then
+  echo "GROOT_SMOKE_ONLY=1 is enabled; use ./scripts/10_test_groot_smoke.sh instead." >&2
+  exit 1
+fi
+
 HOST="${BACKEND_HOST:-127.0.0.1}"
 PORT="${BACKEND_PORT:-8000}"
 

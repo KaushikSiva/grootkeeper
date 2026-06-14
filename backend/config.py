@@ -31,6 +31,12 @@ class Settings:
     groot_repo_dir: str = os.getenv("GROOT_REPO_DIR", "")
     groot_checkpoint: str = os.getenv("GROOT_CHECKPOINT", "")
     isaac_sim_python: str = os.getenv("ISAAC_SIM_PYTHON", "")
+    g1_usd_path: str = os.getenv("G1_USD_PATH", "")
+    g1_robot_prim: str = os.getenv("G1_ROBOT_PRIM", "/World/G1")
+    g1_embodiment_mode: str = os.getenv(
+        "G1_EMBODIMENT_MODE",
+        "fixed_upper_body_pick_place",
+    )
     ros_distro: str = os.getenv("ROS_DISTRO", "jazzy")
     ros_domain_id: str = os.getenv(
         "ROS_DOMAIN_ID",

@@ -10,5 +10,7 @@
   It is a long-horizon household manipulation task that requires scene understanding, sequencing, and controlled execution.
 - What is real:
   The GR00T inference path, the ROS 2 publish path, and the Isaac Sim target scene are all first-class parts of the repo.
+- Why Unitree G1:
+  It gives the demo a serious humanoid embodiment for grasping and eventual locomanipulation instead of a generic placeholder robot.
 - What is next:
   The remaining high-value step is action-vector mapping or post-training for the chosen robot embodiment.

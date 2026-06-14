@@ -13,8 +13,10 @@ if [[ ! -f "$ROS_SETUP" ]]; then
   exit 1
 fi
 
+set +u
 source "$ROS_SETUP"
 source ros2_ws/install/setup.bash
+set -u
 
 echo "ROS 2 bridge nodes are ready."
 echo "Run in separate GB10 terminals:"

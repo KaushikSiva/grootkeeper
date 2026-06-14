@@ -49,6 +49,8 @@ def _publish_string_message(topic: str, payload: dict[str, object]) -> str:
 def publish_groot_actions_to_ros(actions: list[GrootAction]) -> str:
     payload = {
         "source": "grootkeeper_backend",
+        "robot": "unitree_g1",
+        "embodiment_mode": settings.g1_embodiment_mode,
         "checkpoint": settings.groot_checkpoint,
         "actions": [action.model_dump() for action in actions],
     }

@@ -4,5 +4,6 @@ The GB10 runtime should host Isaac Sim and the ROS 2 bridge. This folder contain
 
 - `scene_spec.md`: the expected scene layout and object names.
 - `create_trashbot_scene.py`: a Script Editor skeleton for stage creation and scene-state publishing.
+- `g1_integration_notes.md`: how to make Unitree G1 the explicit simulation embodiment.
 - `isaac_ros2_bridge_notes.md`: ROS 2 bridge setup notes.
 - `action_graph_notes.md`: how to wire the action graph from ROS 2 actions to robot control.

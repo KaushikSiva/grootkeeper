@@ -15,9 +15,13 @@ except ImportError:
 
 
 LIKELY_GROOT_MODULES = (
-    "gr00t",
-    "gr00t.deploy",
+    "gr00t.policy",
+    "gr00t.deployment",
     "gr00t.model",
+)
+
+FALLBACK_GROOT_MODULES = (
+    "gr00t",
     "isaac_gr00t",
 )
 
@@ -77,12 +81,34 @@ def check_groot_import() -> tuple[bool, str]:
         except Exception as exc:
             import_errors.append(f"{module_name}: {exc}")
 
+    fallback_hits: list[str] = []
+    for module_name in FALLBACK_GROOT_MODULES:
+        try:
+            importlib.import_module(module_name)
+            fallback_hits.append(module_name)
+        except Exception as exc:
+            import_errors.append(f"{module_name}: {exc}")
+
+    if fallback_hits:
+        fallback_note = ", ".join(fallback_hits)
+        import_errors.append(
+            "Top-level GR00T package import succeeded "
+            f"({fallback_note}) but runtime modules did not. "
+            "The active Python environment is missing GR00T runtime dependencies "
+            "such as torch, or the official install steps are incomplete."
+        )
+
     joined = "; ".join(import_errors)
     return False, f"Unable to import likely GR00T modules. {joined}"
 
 
 def check_ros2() -> tuple[bool, str]:
-    return _run_command(["ros2", "--help"])
+    cli_ok, cli_note = _run_command(["ros2", "--help"])
+    if not cli_ok:
+        return False, cli_note
+
+    distro = settings.ros_distro or "unknown"
+    return True, f"ROS 2 CLI available. Configured ROS_DISTRO={distro}"
 
 
 def check_isaac_sim_config() -> tuple[bool, str]:

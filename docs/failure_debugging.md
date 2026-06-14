@@ -14,6 +14,10 @@ Common failures and what to check next:
   The interpreter used by `.venv`, GR00T, and Isaac tools must match the supported versions.
 - Isaac Sim python path missing:
   Set `ISAAC_SIM_PYTHON` to Isaac Sim's `python.sh` on the GB10.
+- Unitree G1 asset path missing:
+  Set `G1_USD_PATH` to a real Unitree G1 USD file and verify that Isaac Sim can reference it.
+- Unitree G1 unstable in simulation:
+  Start with fixed-base or stance-locked upper-body pick-place before enabling full locomotion.
 - `ROS_DOMAIN_ID` mismatch:
   The backend shell, ROS 2 terminals, and Isaac Sim bridge must share the same domain ID.
 - ROS 2 bridge disabled:

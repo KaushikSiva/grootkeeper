@@ -8,21 +8,16 @@ from pathlib import Path
 try:
     from .config import settings
     from .schemas import GrootAction, GrootObservation
+    from .system_checks import LIKELY_GROOT_MODULES
 except ImportError:
     from config import settings
     from schemas import GrootAction, GrootObservation
+    from system_checks import LIKELY_GROOT_MODULES
 
 
 REAL_GROOT_API_MESSAGE = (
     "Real GR00T policy API not wired. Open backend/groot_client.py and map "
     "NVIDIA Isaac-GR00T inference API here."
-)
-
-LIKELY_GROOT_MODULES = (
-    "gr00t",
-    "gr00t.deploy",
-    "gr00t.model",
-    "isaac_gr00t",
 )
 
 

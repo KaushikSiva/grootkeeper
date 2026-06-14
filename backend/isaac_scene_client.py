@@ -43,7 +43,7 @@ def get_scene_state_from_isaac_placeholder() -> SceneState:
                 orientation=[0.0, 0.0, 0.0, 1.0],
             ),
             SceneObject(
-                name="robot_base",
+                name="unitree_g1",
                 object_type="robot",
                 position=[0.0, 0.0, 0.0],
                 orientation=[0.0, 0.0, 0.0, 1.0],

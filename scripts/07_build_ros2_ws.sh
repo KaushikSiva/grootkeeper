@@ -13,9 +13,13 @@ if [[ ! -f "$ROS_SETUP" ]]; then
   exit 1
 fi
 
+set +u
 source "$ROS_SETUP"
+set -u
 cd ros2_ws
 colcon build
+set +u
 source install/setup.bash
+set -u
 
 echo "ROS 2 workspace built and sourced."

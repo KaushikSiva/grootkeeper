@@ -10,7 +10,7 @@ User command
 → safety  
 → ROS 2 topic  
 → Isaac Sim ROS 2 bridge  
-→ simulated robot controller  
+→ Unitree G1 simulated robot controller  
 → object moved to dustbin
 
 Machine split:
@@ -24,3 +24,4 @@ Design stance:
 - The backend fails loudly if the real GR00T API is not wired.
 - Scene perception comes from Isaac object poses first, then optional virtual camera later.
 - Mock mode exists only as a diagnostic fallback and is blocked from real `/execute_l3`.
+- The target simulated embodiment is `Unitree G1`, starting with stable upper-body pick-place control before full locomanipulation.
