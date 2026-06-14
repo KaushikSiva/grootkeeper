@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 try:
     from .config import settings
     from .groot_client import get_groot_status, smoke_mode_enabled
+    from .isaac_scene_client import get_scene_state
     from .ros2_client import publish_stop_to_ros
     from .schemas import TaskRequest
     from .system_checks import get_system_status
@@ -13,6 +14,7 @@ try:
 except ImportError:
     from config import settings
     from groot_client import get_groot_status, smoke_mode_enabled
+    from isaac_scene_client import get_scene_state
     from ros2_client import publish_stop_to_ros
     from schemas import TaskRequest
     from system_checks import get_system_status
@@ -65,6 +67,11 @@ def system_status() -> dict[str, object]:
 @app.get("/groot/status")
 def groot_status() -> dict[str, object]:
     return get_groot_status()
+
+
+@app.get("/scene")
+def scene() -> dict[str, object]:
+    return get_scene_state().model_dump()
 
 
 @app.post("/groot/smoke")

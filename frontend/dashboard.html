@@ -3,18 +3,25 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Grootkeeper Dashboard</title>
+  <title>Grootkeeper Control Surface</title>
   <style>
     :root {
-      --bg: #0b1320;
-      --panel: #101b2f;
-      --panel-alt: #152543;
-      --text: #edf2f7;
-      --muted: #9fb2c8;
-      --accent: #76e4a7;
+      --bg: #07111e;
+      --bg-soft: #0c1727;
+      --panel: rgba(10, 21, 35, 0.86);
+      --panel-strong: rgba(8, 18, 31, 0.96);
+      --line: rgba(193, 214, 234, 0.12);
+      --line-strong: rgba(193, 214, 234, 0.2);
+      --text: #ebf3fb;
+      --muted: #8da4bc;
+      --accent: #6fe4a2;
+      --accent-strong: #2fba72;
+      --warn: #f7b955;
       --danger: #ff6b6b;
-      --warning: #f7b955;
-      --border: rgba(255, 255, 255, 0.08);
+      --blue: #72b7ff;
+      --cyan: #71def5;
+      --shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+      --radius: 22px;
     }
 
     * {
@@ -23,258 +30,978 @@
 
     body {
       margin: 0;
-      font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
-      color: var(--text);
-      background:
-        radial-gradient(circle at top left, rgba(118, 228, 167, 0.12), transparent 30%),
-        linear-gradient(180deg, #08101d 0%, #0f1a2a 100%);
       min-height: 100vh;
+      color: var(--text);
+      font-family: "IBM Plex Sans", "Avenir Next", "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 12% 18%, rgba(111, 228, 162, 0.16), transparent 28%),
+        radial-gradient(circle at 88% 12%, rgba(114, 183, 255, 0.18), transparent 24%),
+        linear-gradient(180deg, #07101c 0%, #0c1624 54%, #09111b 100%);
+      overflow-x: hidden;
     }
 
-    .page {
-      max-width: 1280px;
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      background-size: 48px 48px;
+      mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.55), transparent 92%);
+    }
+
+    .shell {
+      width: min(1500px, calc(100vw - 28px));
       margin: 0 auto;
-      padding: 32px 20px 48px;
+      padding: 28px 0 40px;
     }
 
     .hero {
       display: grid;
-      gap: 16px;
-      margin-bottom: 24px;
+      grid-template-columns: minmax(0, 1.8fr) minmax(320px, 1fr);
+      gap: 24px;
+      align-items: stretch;
+      min-height: calc(100svh - 68px);
     }
 
-    .hero h1 {
-      margin: 0;
-      font-size: clamp(2rem, 4vw, 3.4rem);
-      letter-spacing: -0.03em;
+    .hero-copy,
+    .hero-side,
+    .workspace,
+    .rail,
+    .detail {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
     }
 
-    .hero p {
-      margin: 0;
-      color: var(--muted);
-      max-width: 820px;
-      line-height: 1.55;
-    }
-
-    .toolbar,
-    .grid {
+    .hero-copy {
+      position: relative;
+      overflow: hidden;
+      padding: 34px 34px 28px;
       display: grid;
-      gap: 16px;
+      gap: 24px;
     }
 
-    .toolbar {
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      margin-bottom: 24px;
+    .hero-copy::after {
+      content: "";
+      position: absolute;
+      inset: auto -8% -30% auto;
+      width: 48%;
+      height: 58%;
+      background: radial-gradient(circle at center, rgba(111, 228, 162, 0.18), transparent 70%);
+      filter: blur(14px);
+      pointer-events: none;
     }
 
-    .grid {
-      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    .eyebrow {
+      display: inline-flex;
+      width: fit-content;
+      gap: 10px;
+      align-items: center;
+      padding: 10px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--line-strong);
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-size: 0.78rem;
+      background: rgba(255, 255, 255, 0.03);
     }
 
-    .panel {
-      background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01));
-      border: 1px solid var(--border);
+    .eyebrow::before {
+      content: "";
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: var(--accent);
+      box-shadow: 0 0 0 8px rgba(111, 228, 162, 0.12);
+      animation: pulse 1.7s ease-in-out infinite;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2.6rem, 5vw, 5rem);
+      letter-spacing: -0.05em;
+      line-height: 0.95;
+      max-width: 11ch;
+    }
+
+    .hero-copy p {
+      margin: 0;
+      max-width: 64ch;
+      line-height: 1.65;
+      color: var(--muted);
+      font-size: 1rem;
+    }
+
+    .chain {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .chain-cell {
+      padding: 14px 14px 16px;
+      border: 1px solid var(--line);
       border-radius: 18px;
-      padding: 18px;
-      backdrop-filter: blur(10px);
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+      background: rgba(255, 255, 255, 0.03);
+      transform: translateY(18px);
+      opacity: 0;
+      animation: rise 700ms ease forwards;
     }
 
-    .panel h2,
-    .panel h3 {
-      margin-top: 0;
+    .chain-cell:nth-child(2) { animation-delay: 90ms; }
+    .chain-cell:nth-child(3) { animation-delay: 180ms; }
+    .chain-cell:nth-child(4) { animation-delay: 270ms; }
+
+    .chain-label {
+      display: block;
+      color: var(--muted);
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
       margin-bottom: 10px;
+    }
+
+    .chain-value {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1rem;
+      font-weight: 700;
+    }
+
+    .dot {
+      width: 11px;
+      height: 11px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.2);
+      box-shadow: 0 0 0 8px rgba(255, 255, 255, 0.04);
+    }
+
+    .dot.ok { background: var(--accent); box-shadow: 0 0 0 8px rgba(111, 228, 162, 0.14); }
+    .dot.warn { background: var(--warn); box-shadow: 0 0 0 8px rgba(247, 185, 85, 0.14); }
+    .dot.error { background: var(--danger); box-shadow: 0 0 0 8px rgba(255, 107, 107, 0.14); }
+    .dot.idle { background: rgba(255, 255, 255, 0.22); }
+
+    .hero-side {
+      padding: 24px;
+      display: grid;
+      gap: 18px;
+      align-content: start;
+    }
+
+    .section-title {
+      margin: 0;
+      font-size: 0.82rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .control-group {
+      display: grid;
+      gap: 10px;
     }
 
     label {
       display: block;
-      font-size: 0.9rem;
       color: var(--muted);
-      margin-bottom: 6px;
+      font-size: 0.9rem;
     }
 
     input,
     textarea,
-    button {
-      width: 100%;
-      border-radius: 12px;
-      border: 1px solid var(--border);
+    button,
+    input[type="range"] {
       font: inherit;
     }
 
     input,
     textarea {
-      background: rgba(6, 12, 22, 0.9);
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: rgba(4, 11, 19, 0.84);
       color: var(--text);
-      padding: 12px 14px;
+      padding: 14px 16px;
+      outline: none;
+      transition: border-color 160ms ease, box-shadow 160ms ease;
+    }
+
+    input:focus,
+    textarea:focus {
+      border-color: rgba(111, 228, 162, 0.55);
+      box-shadow: 0 0 0 3px rgba(111, 228, 162, 0.14);
     }
 
     textarea {
-      min-height: 88px;
+      min-height: 104px;
       resize: vertical;
+      line-height: 1.45;
     }
 
-    .button-list {
+    .button-grid {
       display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 10px;
     }
 
     button {
-      background: linear-gradient(135deg, #1f7a53, #2fba72);
-      color: #06110b;
-      font-weight: 700;
-      padding: 12px 14px;
+      border: 0;
+      border-radius: 16px;
+      padding: 14px 16px;
       cursor: pointer;
-      transition: transform 120ms ease, box-shadow 120ms ease;
-      box-shadow: 0 12px 24px rgba(47, 186, 114, 0.2);
+      font-weight: 700;
+      color: #07110c;
+      background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+      box-shadow: 0 18px 30px rgba(47, 186, 114, 0.22);
+      transition: transform 140ms ease, filter 140ms ease, box-shadow 140ms ease;
     }
 
     button:hover {
       transform: translateY(-1px);
+      filter: brightness(1.05);
     }
 
     button.secondary {
-      background: linear-gradient(135deg, #20304b, #334a6c);
       color: var(--text);
+      background: linear-gradient(135deg, #18283f, #2a3c5d);
+      box-shadow: none;
+    }
+
+    button.ghost {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--line);
       box-shadow: none;
     }
 
     button.danger {
-      background: linear-gradient(135deg, #8b2222, #d44848);
       color: #fff5f5;
+      background: linear-gradient(135deg, #8b2222, #d44848);
       box-shadow: none;
+    }
+
+    .status-copy {
+      display: grid;
+      gap: 6px;
+      padding: 14px 16px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--line);
+    }
+
+    .status-copy strong {
+      font-size: 1rem;
+    }
+
+    .status-copy span {
+      color: var(--muted);
+      line-height: 1.5;
+      font-size: 0.92rem;
+    }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.9fr) minmax(310px, 0.96fr);
+      gap: 22px;
+      margin-top: 24px;
+    }
+
+    .workspace {
+      padding: 24px;
+      display: grid;
+      gap: 20px;
+    }
+
+    .workspace-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: end;
+    }
+
+    .workspace-top h2,
+    .rail h3,
+    .detail h3 {
+      margin: 0;
+      font-size: 1.35rem;
+      letter-spacing: -0.03em;
+    }
+
+    .workspace-top p,
+    .rail p,
+    .detail p {
+      margin: 8px 0 0;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .live-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--muted);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 10px 14px;
+      font-size: 0.85rem;
+      white-space: nowrap;
+    }
+
+    .live-tag::before {
+      content: "";
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      background: var(--blue);
+      box-shadow: 0 0 0 8px rgba(114, 183, 255, 0.12);
+    }
+
+    .stage-panel {
+      position: relative;
+      min-height: 560px;
+      border-radius: 26px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      background:
+        radial-gradient(circle at 20% 18%, rgba(111, 228, 162, 0.08), transparent 28%),
+        linear-gradient(180deg, rgba(6, 12, 18, 0.98), rgba(8, 15, 24, 0.98));
+    }
+
+    .stage-panel::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(transparent 90%, rgba(255, 255, 255, 0.04)),
+        linear-gradient(90deg, transparent 90%, rgba(255, 255, 255, 0.03));
+      background-size: 64px 64px;
+      opacity: 0.4;
+    }
+
+    svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .stage-hud {
+      position: absolute;
+      left: 18px;
+      right: 18px;
+      bottom: 18px;
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 12px;
+      z-index: 2;
+    }
+
+    .hud-card {
+      padding: 14px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: rgba(6, 13, 22, 0.85);
+      backdrop-filter: blur(8px);
+    }
+
+    .hud-card span {
+      display: block;
+      color: var(--muted);
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 8px;
+    }
+
+    .hud-card strong {
+      display: block;
+      font-size: 1rem;
+      line-height: 1.2;
+    }
+
+    .timeline-shell {
+      display: grid;
+      gap: 12px;
+    }
+
+    .timeline-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .timeline-meta {
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .timeline-bars {
+      display: grid;
+      grid-template-columns: repeat(40, minmax(0, 1fr));
+      gap: 4px;
+      min-height: 30px;
+    }
+
+    .bar {
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      transform-origin: center bottom;
+      transition: background 140ms ease, transform 140ms ease, opacity 140ms ease;
+      opacity: 0.72;
+    }
+
+    .bar.approach { background: rgba(114, 183, 255, 0.32); }
+    .bar.grasp { background: rgba(111, 228, 162, 0.36); }
+    .bar.carry { background: rgba(247, 185, 85, 0.38); }
+    .bar.active { transform: scaleY(1.36); opacity: 1; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12); }
+
+    .playback-row {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .playback-row input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+    }
+
+    .rail {
+      padding: 22px;
+      display: grid;
+      gap: 18px;
+      align-content: start;
+    }
+
+    .metric-stack,
+    .feed-list,
+    .legend {
+      display: grid;
+      gap: 12px;
+    }
+
+    .metric {
+      padding: 14px 16px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .metric-label {
+      color: var(--muted);
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 8px;
+    }
+
+    .metric-value {
+      font-size: 1.02rem;
+      font-weight: 700;
+      line-height: 1.35;
+    }
+
+    .feed-item {
+      padding: 14px 16px;
+      border-left: 2px solid rgba(111, 228, 162, 0.4);
+      background: rgba(255, 255, 255, 0.025);
+    }
+
+    .feed-item strong {
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .feed-item span {
+      display: block;
+      color: var(--muted);
+      line-height: 1.45;
+      font-size: 0.92rem;
+    }
+
+    .legend {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .legend-item {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .swatch {
+      width: 12px;
+      height: 12px;
+      border-radius: 999px;
+    }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 22px;
+      margin-top: 22px;
+    }
+
+    .detail {
+      padding: 20px;
+      display: grid;
+      gap: 12px;
+      min-height: 320px;
     }
 
     pre {
       margin: 0;
-      padding: 14px;
-      background: rgba(4, 8, 15, 0.92);
-      border: 1px solid var(--border);
-      border-radius: 12px;
+      min-height: 210px;
       overflow: auto;
+      padding: 16px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: rgba(4, 10, 16, 0.92);
+      color: #d6e4f2;
       white-space: pre-wrap;
       word-break: break-word;
-      color: #d7e3f1;
-      min-height: 120px;
+      line-height: 1.45;
+      font-size: 0.9rem;
     }
 
-    .status-line {
+    .footer-note {
+      margin-top: 18px;
+      padding: 18px 20px;
       color: var(--muted);
-      font-size: 0.92rem;
-      margin-top: 8px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.03);
+      line-height: 1.55;
     }
 
-    .error {
-      color: var(--danger);
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(0.8); opacity: 0.75; }
     }
 
-    .warning {
-      color: var(--warning);
+    @keyframes rise {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @media (max-width: 1180px) {
+      .hero,
+      .main-grid,
+      .detail-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .hero {
+        min-height: auto;
+      }
+
+      .stage-panel {
+        min-height: 480px;
+      }
+
+      .stage-hud,
+      .legend,
+      .chain {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 760px) {
+      .shell {
+        width: min(100vw - 16px, 100%);
+        padding-top: 14px;
+      }
+
+      .hero-copy,
+      .hero-side,
+      .workspace,
+      .rail,
+      .detail {
+        border-radius: 18px;
+      }
+
+      .hero-copy,
+      .hero-side,
+      .workspace,
+      .rail,
+      .detail {
+        padding: 18px;
+      }
+
+      .button-grid,
+      .stage-hud,
+      .legend,
+      .chain {
+        grid-template-columns: 1fr;
+      }
+
+      .workspace-top,
+      .timeline-top,
+      .playback-row {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .stage-panel {
+        min-height: 420px;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="page">
+  <div class="shell">
     <section class="hero">
-      <h1>Grootkeeper</h1>
-      <p>
-        GR00T-first trash pickup orchestration for Dell GB10. The Mac hosts this dashboard;
-        the GB10 runs GR00T, Isaac Sim, ROS 2, and the backend. Failures are surfaced directly
-        so the integration boundary is obvious.
-      </p>
-    </section>
-
-    <section class="toolbar">
-      <div class="panel">
-        <label for="backendUrl">Backend URL</label>
-        <input id="backendUrl" value="http://localhost:8000" />
-        <div class="status-line" id="requestStatus">Idle.</div>
-      </div>
-      <div class="panel">
-        <label for="commandInput">Command</label>
-        <textarea id="commandInput">Pick up trash in the room and put it in the dustbin</textarea>
-      </div>
-    </section>
-
-    <section class="grid">
-      <div class="panel">
-        <h2>Actions</h2>
-        <div class="button-list">
-          <button onclick="getJson('/system/status', 'systemChecks')">System Status</button>
-          <button class="secondary" onclick="getJson('/groot/status', 'grootStatus')">GR00T Status</button>
-          <button class="secondary" onclick="postJson('/groot/smoke', 'grootPlan')">GR00T Smoke</button>
-          <button onclick="postJson('/plan', 'grootPlan')">Plan with real GR00T</button>
-          <button onclick="postJson('/execute_l3', 'executionStatus')">Execute L3</button>
-          <button class="danger" onclick="postStop()">Stop</button>
+      <div class="hero-copy">
+        <div class="eyebrow">GR00T x ROS x Isaac Surface</div>
+        <div>
+          <h1>See the policy move before the robot does.</h1>
+          <p>
+            This control surface turns the returned GR00T action chunk into a readable room replay.
+            Plan and execute still run against the real backend on the GB10; the browser renders the
+            scene, highlights the target and destination, and replays the returned trajectory so you
+            can verify behavior without parsing raw tensors.
+          </p>
+        </div>
+        <div class="chain">
+          <div class="chain-cell">
+            <span class="chain-label">Backend</span>
+            <div class="chain-value"><span id="backendDot" class="dot idle"></span><span id="backendState">Idle</span></div>
+          </div>
+          <div class="chain-cell">
+            <span class="chain-label">Policy</span>
+            <div class="chain-value"><span id="grootDot" class="dot idle"></span><span id="grootState">Awaiting check</span></div>
+          </div>
+          <div class="chain-cell">
+            <span class="chain-label">ROS Publish</span>
+            <div class="chain-value"><span id="rosDot" class="dot idle"></span><span id="rosState">Not run</span></div>
+          </div>
+          <div class="chain-cell">
+            <span class="chain-label">Replay</span>
+            <div class="chain-value"><span id="replayDot" class="dot idle"></span><span id="replayState">No sequence loaded</span></div>
+          </div>
         </div>
       </div>
 
-      <div class="panel">
-        <h3>System checks</h3>
-        <pre id="systemChecks">Press "System Status".</pre>
-      </div>
+      <aside class="hero-side">
+        <div>
+          <div class="section-title">Mission Controls</div>
+        </div>
 
-      <div class="panel">
-        <h3>GR00T status</h3>
-        <pre id="grootStatus">Press "GR00T Status".</pre>
-      </div>
+        <div class="control-group">
+          <label for="backendUrl">Backend URL</label>
+          <input id="backendUrl" value="http://localhost:8000" />
+        </div>
 
-      <div class="panel">
-        <h3>Scene state</h3>
-        <pre id="sceneState">Waiting for a plan or execute response.</pre>
-      </div>
+        <div class="control-group">
+          <label for="commandInput">Command</label>
+          <textarea id="commandInput">Pick up trash in the room and put it in the dustbin</textarea>
+        </div>
 
-      <div class="panel">
-        <h3>GR00T plan</h3>
-        <pre id="grootPlan">Press "Plan with real GR00T".</pre>
-      </div>
+        <div class="button-grid">
+          <button id="systemBtn" class="secondary">System Status</button>
+          <button id="grootBtn" class="secondary">GR00T Status</button>
+          <button id="sceneBtn" class="ghost">Scene Snapshot</button>
+          <button id="planBtn">Plan Replay</button>
+          <button id="executeBtn">Execute L3</button>
+          <button id="stopBtn" class="danger">Stop</button>
+        </div>
 
-      <div class="panel">
-        <h3>ROS 2 publish status</h3>
-        <pre id="ros2Status">Waiting for execution.</pre>
-      </div>
-
-      <div class="panel">
-        <h3>Isaac execution status</h3>
-        <pre id="executionStatus">Press "Execute L3".</pre>
-      </div>
-
-      <div class="panel">
-        <h3>Errors and debug steps</h3>
-        <pre id="errors">No errors yet.</pre>
-      </div>
+        <div class="status-copy">
+          <strong id="requestStatus">Idle.</strong>
+          <span id="requestDetail">Load the scene, run a plan, then play the returned trajectory inside the room map.</span>
+        </div>
+      </aside>
     </section>
+
+    <section class="main-grid">
+      <main class="workspace">
+        <div class="workspace-top">
+          <div>
+            <h2>Scene Replay</h2>
+            <p>Live room map using the last scene and returned action sequence. `Execute L3` reuses the same replay but marks ROS publish state.</p>
+          </div>
+          <div class="live-tag" id="sceneSourceTag">Scene source: not loaded</div>
+        </div>
+
+        <div class="stage-panel">
+          <svg id="sceneViewport" viewBox="0 0 1000 640" preserveAspectRatio="xMidYMid meet" aria-label="scene replay"></svg>
+          <div class="stage-hud">
+            <div class="hud-card">
+              <span>Phase</span>
+              <strong id="phaseValue">Standby</strong>
+            </div>
+            <div class="hud-card">
+              <span>Current Step</span>
+              <strong id="stepValue">0 / 0</strong>
+            </div>
+            <div class="hud-card">
+              <span>Target</span>
+              <strong id="targetValue">None</strong>
+            </div>
+            <div class="hud-card">
+              <span>Destination</span>
+              <strong id="destinationValue">None</strong>
+            </div>
+            <div class="hud-card">
+              <span>EEF Delta</span>
+              <strong id="eefValue">dx 0.000, dy 0.000</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="timeline-shell">
+          <div class="timeline-top">
+            <div class="timeline-meta" id="timelineMeta">No plan loaded.</div>
+            <div class="playback-row">
+              <button id="playBtn" class="secondary">Play</button>
+              <button id="resetBtn" class="ghost">Reset</button>
+            </div>
+          </div>
+          <div class="timeline-bars" id="timelineBars"></div>
+          <div class="playback-row">
+            <input id="timelineSlider" type="range" min="0" max="0" value="0" />
+          </div>
+        </div>
+      </main>
+
+      <aside class="rail">
+        <div>
+          <h3>Mission Feed</h3>
+          <p>Summarized from the last scene, GR00T plan, and execute result.</p>
+        </div>
+
+        <div class="metric-stack">
+          <div class="metric">
+            <div class="metric-label">Scene Objects</div>
+            <div class="metric-value" id="objectCount">0 objects</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Plan Horizon</div>
+            <div class="metric-value" id="planHorizon">0 steps</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Execution Status</div>
+            <div class="metric-value" id="executionState">No execution yet</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Safety Gate</div>
+            <div class="metric-value" id="safetyState">Not evaluated</div>
+          </div>
+        </div>
+
+        <div class="legend">
+          <div class="legend-item"><span class="swatch" style="background: var(--blue);"></span>Approach</div>
+          <div class="legend-item"><span class="swatch" style="background: var(--accent);"></span>Grasp</div>
+          <div class="legend-item"><span class="swatch" style="background: var(--warn);"></span>Carry</div>
+        </div>
+
+        <div class="feed-list" id="feedList">
+          <div class="feed-item">
+            <strong>Standby</strong>
+            <span>Run `Scene Snapshot`, `Plan Replay`, or `Execute L3` to populate the live feed.</span>
+          </div>
+        </div>
+      </aside>
+    </section>
+
+    <section class="detail-grid">
+      <section class="detail">
+        <div>
+          <h3>Scene Payload</h3>
+          <p>The current room layout backing the replay.</p>
+        </div>
+        <pre id="sceneState">Press "Scene Snapshot" or run a plan.</pre>
+      </section>
+
+      <section class="detail">
+        <div>
+          <h3>GR00T Plan</h3>
+          <p>The last real policy plan returned by the backend.</p>
+        </div>
+        <pre id="grootPlan">Press "Plan Replay".</pre>
+      </section>
+
+      <section class="detail">
+        <div>
+          <h3>Execution + Debug</h3>
+          <p>Execute response and any error details. Raw JSON stays here, not in the main workspace.</p>
+        </div>
+        <pre id="executionStatus">Press "Execute L3".</pre>
+      </section>
+    </section>
+
+    <section class="detail-grid">
+      <section class="detail">
+        <div>
+          <h3>System Checks</h3>
+          <p>Backend, CUDA, ROS, and Isaac-facing health.</p>
+        </div>
+        <pre id="systemChecks">Press "System Status".</pre>
+      </section>
+
+      <section class="detail">
+        <div>
+          <h3>GR00T Status</h3>
+          <p>Current policy server configuration and modality contract.</p>
+        </div>
+        <pre id="grootStatus">Press "GR00T Status".</pre>
+      </section>
+
+      <section class="detail">
+        <div>
+          <h3>Errors</h3>
+          <p>Request failures and next debug steps.</p>
+        </div>
+        <pre id="errors">No errors yet.</pre>
+      </section>
+    </section>
+
+    <div class="footer-note">
+      This replay is browser-side visualization of the returned GR00T sequence and scene state. It makes policy behavior visible immediately. Actual robot motion in Isaac still depends on the downstream controller hookup from the ROS listener into the G1 articulation.
+    </div>
   </div>
 
   <script>
+    const appState = {
+      systemStatus: null,
+      grootStatus: null,
+      scene: null,
+      plan: null,
+      execution: null,
+      playback: null,
+      playbackIndex: 0,
+      isPlaying: false,
+      playTimer: null,
+      lastRequest: "idle",
+    };
+
+    const els = {};
+
+    document.addEventListener("DOMContentLoaded", () => {
+      bindElements();
+      restorePreferences();
+      bindActions();
+      bootDashboard();
+    });
+
+    function bindElements() {
+      [
+        "backendUrl", "commandInput", "requestStatus", "requestDetail", "sceneViewport",
+        "sceneSourceTag", "phaseValue", "stepValue", "targetValue", "destinationValue",
+        "eefValue", "timelineMeta", "timelineBars", "timelineSlider", "objectCount",
+        "planHorizon", "executionState", "safetyState", "feedList", "sceneState",
+        "grootPlan", "executionStatus", "systemChecks", "grootStatus", "errors",
+        "backendDot", "grootDot", "rosDot", "replayDot", "backendState", "grootState",
+        "rosState", "replayState", "systemBtn", "grootBtn", "sceneBtn", "planBtn",
+        "executeBtn", "stopBtn", "playBtn", "resetBtn"
+      ].forEach((id) => {
+        els[id] = document.getElementById(id);
+      });
+    }
+
+    function restorePreferences() {
+      const backend = localStorage.getItem("grootkeeper.backendUrl");
+      const command = localStorage.getItem("grootkeeper.command");
+      const lastScene = localStorage.getItem("grootkeeper.lastScene");
+      const lastPlan = localStorage.getItem("grootkeeper.lastPlan");
+      const lastExecution = localStorage.getItem("grootkeeper.lastExecution");
+
+      if (backend) els.backendUrl.value = backend;
+      if (command) els.commandInput.value = command;
+      if (lastScene) appState.scene = JSON.parse(lastScene);
+      if (lastPlan) appState.plan = JSON.parse(lastPlan);
+      if (lastExecution) appState.execution = JSON.parse(lastExecution);
+    }
+
+    function bindActions() {
+      els.backendUrl.addEventListener("change", persistPreferences);
+      els.commandInput.addEventListener("change", persistPreferences);
+      els.systemBtn.addEventListener("click", () => getJson("/system/status", "systemChecks", "system"));
+      els.grootBtn.addEventListener("click", () => getJson("/groot/status", "grootStatus", "groot"));
+      els.sceneBtn.addEventListener("click", () => getJson("/scene", "sceneState", "scene"));
+      els.planBtn.addEventListener("click", () => postJson("/plan", "grootPlan", "plan"));
+      els.executeBtn.addEventListener("click", () => postJson("/execute_l3", "executionStatus", "execute"));
+      els.stopBtn.addEventListener("click", postStop);
+      els.playBtn.addEventListener("click", togglePlayback);
+      els.resetBtn.addEventListener("click", resetPlayback);
+      els.timelineSlider.addEventListener("input", () => {
+        stopPlayback();
+        appState.playbackIndex = Number(els.timelineSlider.value);
+        renderAll();
+      });
+    }
+
+    function bootDashboard() {
+      renderAll();
+      getJson("/status", null, "status", false);
+      if (appState.scene == null) {
+        getJson("/scene", "sceneState", "scene", false);
+      }
+    }
+
+    function persistPreferences() {
+      localStorage.setItem("grootkeeper.backendUrl", els.backendUrl.value.trim());
+      localStorage.setItem("grootkeeper.command", els.commandInput.value.trim());
+      if (appState.scene) localStorage.setItem("grootkeeper.lastScene", JSON.stringify(appState.scene));
+      if (appState.plan) localStorage.setItem("grootkeeper.lastPlan", JSON.stringify(appState.plan));
+      if (appState.execution) localStorage.setItem("grootkeeper.lastExecution", JSON.stringify(appState.execution));
+    }
+
     function backendUrl() {
-      return document.getElementById("backendUrl").value.replace(/\/$/, "");
+      return els.backendUrl.value.trim().replace(/\/$/, "");
     }
 
     function commandPayload() {
-      return {
-        command: document.getElementById("commandInput").value.trim(),
-      };
+      persistPreferences();
+      return { command: els.commandInput.value.trim() };
     }
 
-    function setStatus(message, cssClass = "") {
-      const el = document.getElementById("requestStatus");
-      el.textContent = message;
-      el.className = `status-line ${cssClass}`.trim();
-    }
-
-    function render(targetId, data) {
+    function renderJson(targetId, data) {
+      if (!targetId) return;
       document.getElementById(targetId).textContent =
         typeof data === "string" ? data : JSON.stringify(data, null, 2);
     }
 
-    function renderError(error) {
-      render("errors", error);
-      setStatus("Request failed.", "error");
+    function setRequest(status, detail = "", css = "idle") {
+      els.requestStatus.textContent = status;
+      els.requestDetail.textContent = detail;
+      setDot(els.backendDot, css);
+      els.backendState.textContent = status;
     }
 
-    async function getJson(path, targetId) {
-      setStatus(`GET ${path} ...`);
+    function setDot(el, state) {
+      el.className = `dot ${state}`;
+    }
+
+    function renderError(error) {
+      renderJson("errors", error);
+      setRequest("Request failed.", formatErrorDetail(error), "error");
+      appState.lastRequest = "error";
+      renderAll();
+    }
+
+    function formatErrorDetail(error) {
+      if (!error) return "Unknown request failure.";
+      if (typeof error === "string") return error;
+      if (error.detail?.error) return error.detail.error;
+      if (error.error) return error.error;
+      return JSON.stringify(error);
+    }
+
+    async function getJson(path, targetId, kind, announce = true) {
+      if (announce) setRequest(`GET ${path}`, "Waiting for backend response...", "warn");
       try {
         const response = await fetch(`${backendUrl()}${path}`);
         const data = await response.json();
@@ -282,15 +1009,14 @@
           renderError(data);
           return;
         }
-        render(targetId, data);
-        setStatus(`GET ${path} complete.`);
+        handleSuccess(path, data, targetId, kind, announce);
       } catch (error) {
         renderError({ error: error.message, next_steps: ["Check the backend URL and network path to the GB10."] });
       }
     }
 
-    async function postJson(path, targetId) {
-      setStatus(`POST ${path} ...`);
+    async function postJson(path, targetId, kind) {
+      setRequest(`POST ${path}`, "Sending command to the GB10 backend...", "warn");
       try {
         const response = await fetch(`${backendUrl()}${path}`, {
           method: "POST",
@@ -302,29 +1028,15 @@
           renderError(data);
           return;
         }
-
-        render(targetId, data);
-        if (data.observation?.scene) {
-          render("sceneState", data.observation.scene);
-        }
-        if (data.plan?.observation?.scene) {
-          render("sceneState", data.plan.observation.scene);
-        }
-        if (data.ros2_publish_status) {
-          render("ros2Status", data.ros2_publish_status);
-        }
-        if (data.isaac_execution_status) {
-          render("executionStatus", data);
-        }
-        render("errors", "No errors.");
-        setStatus(`POST ${path} complete.`);
+        handleSuccess(path, data, targetId, kind, true);
       } catch (error) {
         renderError({ error: error.message, next_steps: ["Check the backend URL and network path to the GB10."] });
       }
     }
 
     async function postStop() {
-      setStatus("POST /stop ...");
+      stopPlayback();
+      setRequest("POST /stop", "Publishing stop to ROS...", "warn");
       try {
         const response = await fetch(`${backendUrl()}/stop`, { method: "POST" });
         const data = await response.json();
@@ -332,11 +1044,484 @@
           renderError(data);
           return;
         }
-        render("ros2Status", data);
-        setStatus("Stop published.", "warning");
+        renderJson("executionStatus", data);
+        renderJson("errors", "No errors.");
+        appState.execution = null;
+        els.rosState.textContent = "Stop published";
+        setDot(els.rosDot, "warn");
+        setRequest("Stop published.", "The ROS stop command was sent.", "warn");
+        persistPreferences();
       } catch (error) {
         renderError({ error: error.message, next_steps: ["Check the backend URL and network path to the GB10."] });
       }
+    }
+
+    function handleSuccess(path, data, targetId, kind, announce) {
+      if (targetId) renderJson(targetId, data);
+      renderJson("errors", "No errors.");
+
+      if (kind === "system") {
+        appState.systemStatus = data;
+      } else if (kind === "groot" || kind === "status") {
+        appState.grootStatus = data;
+      } else if (kind === "scene") {
+        appState.scene = data;
+        renderJson("sceneState", data);
+      } else if (kind === "plan") {
+        appState.plan = data;
+        appState.scene = data.observation?.scene || appState.scene;
+        appState.execution = null;
+        renderJson("sceneState", appState.scene);
+        primePlaybackFromPayload(data, "plan");
+      } else if (kind === "execute") {
+        appState.execution = data;
+        appState.plan = data.plan || appState.plan;
+        appState.scene = data.plan?.observation?.scene || appState.scene;
+        renderJson("sceneState", appState.scene);
+        primePlaybackFromPayload(data.plan || data, "execute");
+      }
+
+      if (kind === "status") {
+        setRequest("Backend reachable.", "The dashboard can reach the GB10 backend.", "ok");
+      } else if (announce) {
+        setRequest(`${path} complete.`, describeSuccess(kind, data), "ok");
+      }
+
+      persistPreferences();
+      renderAll();
+    }
+
+    function describeSuccess(kind, data) {
+      if (kind === "plan") {
+        return `Loaded ${data.actions?.length || 0} action steps from the real GR00T planner.`;
+      }
+      if (kind === "execute") {
+        return `${data.ros2_publish_status || "Execution complete."}`;
+      }
+      if (kind === "scene") {
+        return `Loaded ${data.objects?.length || 0} scene objects.`;
+      }
+      if (kind === "system") {
+        return `System checks refreshed.`;
+      }
+      if (kind === "groot" || kind === "status") {
+        return data.groot_note || "GR00T status refreshed.";
+      }
+      return "Request complete.";
+    }
+
+    function primePlaybackFromPayload(planLike, source) {
+      const plan = extractPlan(planLike);
+      const scene = plan?.observation?.scene || appState.scene;
+      if (!plan || !scene) return;
+
+      appState.playback = buildPlayback(scene, plan, source);
+      appState.playbackIndex = 0;
+      els.timelineSlider.max = Math.max((appState.playback?.steps.length || 1) - 1, 0);
+      els.timelineSlider.value = 0;
+      setDot(els.replayDot, "ok");
+      els.replayState.textContent = `Loaded ${appState.playback.steps.length} frames`;
+      autoplayPlayback();
+    }
+
+    function extractPlan(payload) {
+      if (!payload) return null;
+      if (Array.isArray(payload.actions)) return payload;
+      if (payload.plan?.actions) return payload.plan;
+      return null;
+    }
+
+    function buildPlayback(scene, plan, source) {
+      const robot = scene.objects.find((obj) => obj.object_type === "robot") || scene.objects[0] || { position: [0, 0, 0], name: "robot" };
+      const target = scene.objects.find((obj) => obj.name === plan.actions?.[0]?.target) ||
+        scene.objects.find((obj) => obj.object_type === "trash") ||
+        null;
+      const destination = scene.objects.find((obj) => obj.name === plan.actions?.[0]?.destination) ||
+        scene.objects.find((obj) => obj.object_type === "container") ||
+        null;
+
+      const steps = (plan.actions || []).map((action, index, arr) => {
+        const phase = classifyPhase(index, arr.length);
+        const eef = action.raw_model_output?.per_key?.eef_9d || [];
+        const grip = Number(action.raw_model_output?.per_key?.gripper_position?.[0] || 0);
+        return { action, phase, eef, grip, index };
+      });
+
+      const trail = buildTrail(robot.position, target?.position, destination?.position, steps);
+
+      return {
+        source,
+        scene,
+        plan,
+        robot,
+        target,
+        destination,
+        steps,
+        trail,
+      };
+    }
+
+    function classifyPhase(index, total) {
+      if (total <= 1) return "approach";
+      const ratio = index / Math.max(total - 1, 1);
+      if (ratio < 0.55) return "approach";
+      if (ratio < 0.72) return "grasp";
+      return "carry";
+    }
+
+    function buildTrail(robotPos, targetPos, destinationPos, steps) {
+      if (!steps.length) return [];
+      const start = { x: robotPos?.[0] || 0, y: robotPos?.[1] || 0, z: robotPos?.[2] || 0 };
+      const target = { x: targetPos?.[0] || start.x + 0.9, y: targetPos?.[1] || start.y + 0.25, z: targetPos?.[2] || start.z + 0.8 };
+      const destination = { x: destinationPos?.[0] || target.x + 0.6, y: destinationPos?.[1] || target.y - 0.5, z: destinationPos?.[2] || target.z };
+
+      let jitterX = 0;
+      let jitterY = 0;
+      return steps.map((step, index) => {
+        const ratio = index / Math.max(steps.length - 1, 1);
+        const base = baseTrajectory(start, target, destination, ratio);
+        const dx = Number(step.eef?.[0] || 0);
+        const dy = Number(step.eef?.[1] || 0);
+        jitterX = clamp(jitterX + dx * 1.8, -0.16, 0.16);
+        jitterY = clamp(jitterY - dy * 1.8, -0.16, 0.16);
+        return { x: base.x + jitterX, y: base.y + jitterY, phase: step.phase };
+      });
+    }
+
+    function baseTrajectory(start, target, destination, ratio) {
+      if (ratio < 0.55) {
+        return lerpPoint(start, target, ratio / 0.55);
+      }
+      if (ratio < 0.72) {
+        return { ...target };
+      }
+      return lerpPoint(target, destination, (ratio - 0.72) / 0.28);
+    }
+
+    function lerpPoint(a, b, t) {
+      const clamped = clamp(t, 0, 1);
+      return {
+        x: a.x + (b.x - a.x) * clamped,
+        y: a.y + (b.y - a.y) * clamped,
+      };
+    }
+
+    function clamp(value, min, max) {
+      return Math.min(max, Math.max(min, value));
+    }
+
+    function autoplayPlayback() {
+      if (!appState.playback?.steps.length) return;
+      stopPlayback();
+      appState.isPlaying = true;
+      appState.playbackIndex = 0;
+      stepPlayback();
+    }
+
+    function togglePlayback() {
+      if (!appState.playback?.steps.length) return;
+      if (appState.isPlaying) {
+        stopPlayback();
+      } else {
+        appState.isPlaying = true;
+        stepPlayback();
+      }
+      renderAll();
+    }
+
+    function resetPlayback() {
+      stopPlayback();
+      appState.playbackIndex = 0;
+      els.timelineSlider.value = 0;
+      renderAll();
+    }
+
+    function stopPlayback() {
+      appState.isPlaying = false;
+      if (appState.playTimer) {
+        clearTimeout(appState.playTimer);
+        appState.playTimer = null;
+      }
+    }
+
+    function stepPlayback() {
+      renderAll();
+      if (!appState.isPlaying || !appState.playback?.steps.length) return;
+      if (appState.playbackIndex >= appState.playback.steps.length - 1) {
+        stopPlayback();
+        return;
+      }
+      appState.playTimer = setTimeout(() => {
+        appState.playbackIndex += 1;
+        els.timelineSlider.value = appState.playbackIndex;
+        stepPlayback();
+      }, 170);
+    }
+
+    function renderAll() {
+      renderStatusRail();
+      renderTimeline();
+      renderFeed();
+      renderSceneMap();
+      renderPlaybackHud();
+      renderRawPanelsIfNeeded();
+      persistPreferences();
+    }
+
+    function renderStatusRail() {
+      const scene = appState.scene;
+      const playback = appState.playback;
+      const execution = appState.execution;
+      const system = appState.systemStatus;
+      const groot = appState.grootStatus;
+
+      els.objectCount.textContent = `${scene?.objects?.length || 0} objects`;
+      els.planHorizon.textContent = `${playback?.steps?.length || appState.plan?.actions?.length || 0} steps`;
+      els.executionState.textContent = execution?.isaac_execution_status || "No execution yet";
+      els.safetyState.textContent = execution?.safety_status || "Not evaluated";
+      els.sceneSourceTag.textContent = `Scene source: ${scene?.source || "not loaded"}`;
+
+      if (groot) {
+        setDot(els.grootDot, groot.groot_available ? "ok" : "error");
+        els.grootState.textContent = groot.groot_available ? `${groot.embodiment_tag || "reachable"}` : "Unavailable";
+      }
+
+      if (system) {
+        const ok = Boolean(system.groot_server_ok && system.ros2_ok);
+        setDot(els.backendDot, ok ? "ok" : "warn");
+        els.backendState.textContent = ok ? "Ready" : "Needs attention";
+      }
+
+      if (execution?.ros2_publish_status) {
+        const published = execution.ros2_publish_status.startsWith("published:");
+        setDot(els.rosDot, published ? "ok" : "warn");
+        els.rosState.textContent = published ? "Published" : execution.ros2_publish_status;
+      }
+
+      if (!playback) {
+        setDot(els.replayDot, "idle");
+        els.replayState.textContent = "No sequence loaded";
+      }
+    }
+
+    function renderTimeline() {
+      const playback = appState.playback;
+      const steps = playback?.steps || [];
+      const current = clamp(appState.playbackIndex, 0, Math.max(steps.length - 1, 0));
+
+      els.timelineSlider.max = Math.max(steps.length - 1, 0);
+      els.timelineSlider.value = current;
+      els.timelineBars.style.gridTemplateColumns = steps.length
+        ? `repeat(${steps.length}, minmax(0, 1fr))`
+        : "repeat(1, minmax(0, 1fr))";
+      els.timelineMeta.textContent = steps.length
+        ? `${steps.length} policy steps | ${appState.isPlaying ? "playing" : "paused"} | source: ${playback.source}`
+        : "No plan loaded.";
+      els.playBtn.textContent = appState.isPlaying ? "Pause" : "Play";
+      els.timelineBars.innerHTML = steps.map((step, index) => {
+        const active = index === current ? "active" : "";
+        const height = 40 + ((index % 5) * 8);
+        return `<div class="bar ${step.phase} ${active}" style="height:${height}%"></div>`;
+      }).join("");
+    }
+
+    function renderFeed() {
+      const playback = appState.playback;
+      const scene = appState.scene;
+      if (!playback || !playback.steps.length) {
+        els.feedList.innerHTML = `
+          <div class="feed-item">
+            <strong>Standby</strong>
+            <span>Run a scene snapshot or plan replay to populate the room map and timeline.</span>
+          </div>`;
+        return;
+      }
+
+      const step = playback.steps[appState.playbackIndex];
+      const targetName = playback.target?.name || step.action.target || "none";
+      const destinationName = playback.destination?.name || step.action.destination || "none";
+      const move = `dx ${(Number(step.eef?.[0] || 0)).toFixed(3)}, dy ${(Number(step.eef?.[1] || 0)).toFixed(3)}`;
+      const notes = [
+        { title: "Scene", detail: `${scene?.source || "unknown"} with ${scene?.objects?.length || 0} objects loaded.` },
+        { title: "Phase", detail: `${prettyPhase(step.phase)} toward ${step.phase === "carry" ? destinationName : targetName}.` },
+        { title: "Motion", detail: `Current end-effector delta is ${move}.` },
+        { title: "Action", detail: `${step.action.primitive} | target ${targetName} | destination ${destinationName}.` },
+      ];
+
+      if (appState.execution?.ros2_publish_status) {
+        notes.push({ title: "ROS", detail: appState.execution.ros2_publish_status });
+      }
+
+      els.feedList.innerHTML = notes.map((note) => `
+        <div class="feed-item">
+          <strong>${note.title}</strong>
+          <span>${note.detail}</span>
+        </div>
+      `).join("");
+    }
+
+    function renderPlaybackHud() {
+      const playback = appState.playback;
+      const step = playback?.steps?.[appState.playbackIndex];
+      if (!step) {
+        els.phaseValue.textContent = "Standby";
+        els.stepValue.textContent = "0 / 0";
+        els.targetValue.textContent = "None";
+        els.destinationValue.textContent = "None";
+        els.eefValue.textContent = "dx 0.000, dy 0.000";
+        return;
+      }
+
+      els.phaseValue.textContent = prettyPhase(step.phase);
+      els.stepValue.textContent = `${step.index + 1} / ${playback.steps.length}`;
+      els.targetValue.textContent = playback.target?.name || step.action.target || "None";
+      els.destinationValue.textContent = playback.destination?.name || step.action.destination || "None";
+      els.eefValue.textContent = `dx ${Number(step.eef?.[0] || 0).toFixed(3)}, dy ${Number(step.eef?.[1] || 0).toFixed(3)}`;
+    }
+
+    function renderRawPanelsIfNeeded() {
+      if (appState.scene && els.sceneState.textContent.includes("Press")) renderJson("sceneState", appState.scene);
+      if (appState.plan && els.grootPlan.textContent.includes("Press")) renderJson("grootPlan", appState.plan);
+      if (appState.execution && els.executionStatus.textContent.includes("Press")) renderJson("executionStatus", appState.execution);
+    }
+
+    function prettyPhase(phase) {
+      if (phase === "approach") return "Approach target";
+      if (phase === "grasp") return "Grip and settle";
+      if (phase === "carry") return "Carry to bin";
+      return phase || "Unknown";
+    }
+
+    function renderSceneMap() {
+      const svg = els.sceneViewport;
+      const scene = appState.scene;
+      const playback = appState.playback;
+      if (!scene?.objects?.length) {
+        svg.innerHTML = fallbackStageMarkup();
+        return;
+      }
+
+      const positions = scene.objects.map((obj) => obj.position || [0, 0, 0]);
+      const xs = positions.map((pos) => Number(pos[0] || 0));
+      const ys = positions.map((pos) => Number(pos[1] || 0));
+      const bounds = {
+        minX: Math.min(...xs, -0.2),
+        maxX: Math.max(...xs, 2.0),
+        minY: Math.min(...ys, -0.8),
+        maxY: Math.max(...ys, 1.6),
+      };
+
+      const currentTrailPoint = playback?.trail?.[appState.playbackIndex] || null;
+      const currentStep = playback?.steps?.[appState.playbackIndex] || null;
+      const carrying = Boolean(currentStep && currentStep.phase === "carry");
+      const targetName = playback?.target?.name || currentStep?.action?.target || null;
+      const destinationName = playback?.destination?.name || currentStep?.action?.destination || null;
+
+      const mapPoint = (pos) => {
+        const x = Number(pos?.[0] || 0);
+        const y = Number(pos?.[1] || 0);
+        const nx = (x - bounds.minX) / Math.max(bounds.maxX - bounds.minX, 0.01);
+        const ny = (y - bounds.minY) / Math.max(bounds.maxY - bounds.minY, 0.01);
+        return {
+          x: 110 + nx * 760,
+          y: 88 + (1 - ny) * 430,
+        };
+      };
+
+      const objectMarkup = scene.objects.map((obj) => {
+        const point = mapPoint(obj.position);
+        const isTarget = obj.name === targetName;
+        const isDestination = obj.name === destinationName;
+        const isRobot = obj.object_type === "robot";
+        const shape = objectShapeMarkup(obj, point, isTarget, isDestination, isRobot);
+        const labelY = point.y + (isRobot ? 42 : 28);
+        return `
+          <g class="scene-object">
+            ${shape}
+            <text x="${point.x}" y="${labelY}" fill="#dceaf8" font-size="14" text-anchor="middle" font-family="IBM Plex Sans, sans-serif">${obj.name}</text>
+          </g>
+        `;
+      }).join("");
+
+      const trailMarkup = playback?.trail?.length
+        ? `
+          <polyline
+            points="${playback.trail.map((point) => {
+              const mapped = mapPoint([point.x, point.y, 0]);
+              return `${mapped.x},${mapped.y}`;
+            }).join(" ")}"
+            fill="none"
+            stroke="rgba(113, 222, 245, 0.92)"
+            stroke-width="4"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-dasharray="8 12"
+          />
+        `
+        : "";
+
+      const robot = playback?.robot || scene.objects.find((obj) => obj.object_type === "robot");
+      const robotPoint = mapPoint(robot?.position || [0, 0, 0]);
+      const cursorPoint = currentTrailPoint ? mapPoint([currentTrailPoint.x, currentTrailPoint.y, 0]) : robotPoint;
+      const targetObject = scene.objects.find((obj) => obj.name === targetName);
+      const destinationObject = scene.objects.find((obj) => obj.name === destinationName);
+      const anchoredTargetPoint = targetObject ? mapPoint(targetObject.position) : null;
+      const carriedTargetPoint = carrying ? cursorPoint : anchoredTargetPoint;
+      const destinationPoint = destinationObject ? mapPoint(destinationObject.position) : null;
+
+      svg.innerHTML = `
+        <defs>
+          <radialGradient id="glowAccent" cx="50%" cy="50%" r="60%">
+            <stop offset="0%" stop-color="rgba(111, 228, 162, 0.55)" />
+            <stop offset="100%" stop-color="rgba(111, 228, 162, 0)" />
+          </radialGradient>
+          <radialGradient id="glowBlue" cx="50%" cy="50%" r="60%">
+            <stop offset="0%" stop-color="rgba(114, 183, 255, 0.45)" />
+            <stop offset="100%" stop-color="rgba(114, 183, 255, 0)" />
+          </radialGradient>
+        </defs>
+        <rect x="42" y="42" width="916" height="556" rx="30" fill="rgba(5, 12, 20, 0.35)" stroke="rgba(255,255,255,0.08)" />
+        <circle cx="180" cy="140" r="150" fill="url(#glowAccent)" />
+        <circle cx="842" cy="160" r="120" fill="url(#glowBlue)" />
+        ${trailMarkup}
+        <line x1="${robotPoint.x}" y1="${robotPoint.y}" x2="${cursorPoint.x}" y2="${cursorPoint.y}" stroke="rgba(255,255,255,0.14)" stroke-width="2" stroke-dasharray="6 10" />
+        ${objectMarkup}
+        ${destinationPoint ? `<circle cx="${destinationPoint.x}" cy="${destinationPoint.y}" r="${currentStep?.phase === "carry" ? 34 : 26}" fill="none" stroke="rgba(247,185,85,0.9)" stroke-width="3" stroke-dasharray="6 8" />` : ""}
+        ${carriedTargetPoint ? `<circle cx="${carriedTargetPoint.x}" cy="${carriedTargetPoint.y}" r="12" fill="${carrying ? "rgba(111,228,162,0.95)" : "rgba(118,228,167,0.72)"}" stroke="rgba(255,255,255,0.72)" stroke-width="2" />` : ""}
+        <circle cx="${cursorPoint.x}" cy="${cursorPoint.y}" r="16" fill="rgba(113, 222, 245, 0.94)" stroke="rgba(255,255,255,0.88)" stroke-width="3" />
+        <circle cx="${cursorPoint.x}" cy="${cursorPoint.y}" r="34" fill="none" stroke="rgba(113, 222, 245, 0.28)" stroke-width="3" />
+        <text x="${cursorPoint.x}" y="${cursorPoint.y - 26}" fill="#ebf3fb" font-size="13" text-anchor="middle" font-family="IBM Plex Sans, sans-serif">EEF</text>
+      `;
+    }
+
+    function objectShapeMarkup(obj, point, isTarget, isDestination, isRobot) {
+      if (obj.object_type === "hazard") {
+        return `
+          <circle cx="${point.x}" cy="${point.y}" r="44" fill="rgba(255,107,107,0.10)" stroke="rgba(255,107,107,0.66)" stroke-width="3" stroke-dasharray="10 10" />
+          <circle cx="${point.x}" cy="${point.y}" r="12" fill="rgba(255,107,107,0.9)" />
+        `;
+      }
+      if (obj.object_type === "container") {
+        return `
+          <rect x="${point.x - 22}" y="${point.y - 22}" width="44" height="44" rx="12" fill="${isDestination ? "rgba(247,185,85,0.98)" : "rgba(247,185,85,0.78)"}" stroke="rgba(255,255,255,0.7)" stroke-width="2" />
+        `;
+      }
+      if (isRobot) {
+        return `
+          <polygon points="${point.x},${point.y - 24} ${point.x + 24},${point.y} ${point.x},${point.y + 24} ${point.x - 24},${point.y}" fill="rgba(114,183,255,0.95)" stroke="rgba(255,255,255,0.76)" stroke-width="2" />
+        `;
+      }
+      return `
+        <circle cx="${point.x}" cy="${point.y}" r="${isTarget ? 16 : 12}" fill="${isTarget ? "rgba(111,228,162,0.98)" : "rgba(225,232,240,0.82)"}" stroke="rgba(255,255,255,0.76)" stroke-width="2" />
+      `;
+    }
+
+    function fallbackStageMarkup() {
+      return `
+        <rect x="42" y="42" width="916" height="556" rx="30" fill="rgba(5, 12, 20, 0.35)" stroke="rgba(255,255,255,0.08)" />
+        <text x="500" y="270" fill="#ebf3fb" font-size="34" text-anchor="middle" font-family="IBM Plex Sans, sans-serif">No scene loaded</text>
+        <text x="500" y="308" fill="#8da4bc" font-size="18" text-anchor="middle" font-family="IBM Plex Sans, sans-serif">Fetch /scene or run a real plan to render the room map.</text>
+      `;
     }
   </script>
 </body>
