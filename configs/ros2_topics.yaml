@@ -1,0 +1,6 @@
+ros_domain_id_env: "TRASHBOT_ROS_DOMAIN_ID"
+topics:
+  groot_action: "/trashbot/groot_action"
+  scene_state: "/trashbot/scene_state"
+  execution_log: "/trashbot/execution_log"
+message_format: "JSON in std_msgs/msg/String for MVP interoperability"

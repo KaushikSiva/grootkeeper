@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Grootkeeper Dashboard</title>
+  <style>
+    :root {
+      --bg: #0b1320;
+      --panel: #101b2f;
+      --panel-alt: #152543;
+      --text: #edf2f7;
+      --muted: #9fb2c8;
+      --accent: #76e4a7;
+      --danger: #ff6b6b;
+      --warning: #f7b955;
+      --border: rgba(255, 255, 255, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(118, 228, 167, 0.12), transparent 30%),
+        linear-gradient(180deg, #08101d 0%, #0f1a2a 100%);
+      min-height: 100vh;
+    }
+
+    .page {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 32px 20px 48px;
+    }
+
+    .hero {
+      display: grid;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .hero h1 {
+      margin: 0;
+      font-size: clamp(2rem, 4vw, 3.4rem);
+      letter-spacing: -0.03em;
+    }
+
+    .hero p {
+      margin: 0;
+      color: var(--muted);
+      max-width: 820px;
+      line-height: 1.55;
+    }
+
+    .toolbar,
+    .grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    .toolbar {
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      margin-bottom: 24px;
+    }
+
+    .grid {
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    }
+
+    .panel {
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01));
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 18px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+    }
+
+    .panel h2,
+    .panel h3 {
+      margin-top: 0;
+      margin-bottom: 10px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.9rem;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    input,
+    textarea,
+    button {
+      width: 100%;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      font: inherit;
+    }
+
+    input,
+    textarea {
+      background: rgba(6, 12, 22, 0.9);
+      color: var(--text);
+      padding: 12px 14px;
+    }
+
+    textarea {
+      min-height: 88px;
+      resize: vertical;
+    }
+
+    .button-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    button {
+      background: linear-gradient(135deg, #1f7a53, #2fba72);
+      color: #06110b;
+      font-weight: 700;
+      padding: 12px 14px;
+      cursor: pointer;
+      transition: transform 120ms ease, box-shadow 120ms ease;
+      box-shadow: 0 12px 24px rgba(47, 186, 114, 0.2);
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+    }
+
+    button.secondary {
+      background: linear-gradient(135deg, #20304b, #334a6c);
+      color: var(--text);
+      box-shadow: none;
+    }
+
+    button.danger {
+      background: linear-gradient(135deg, #8b2222, #d44848);
+      color: #fff5f5;
+      box-shadow: none;
+    }
+
+    pre {
+      margin: 0;
+      padding: 14px;
+      background: rgba(4, 8, 15, 0.92);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      color: #d7e3f1;
+      min-height: 120px;
+    }
+
+    .status-line {
+      color: var(--muted);
+      font-size: 0.92rem;
+      margin-top: 8px;
+    }
+
+    .error {
+      color: var(--danger);
+    }
+
+    .warning {
+      color: var(--warning);
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <section class="hero">
+      <h1>Grootkeeper</h1>
+      <p>
+        GR00T-first trash pickup orchestration for Dell GB10. The Mac hosts this dashboard;
+        the GB10 runs GR00T, Isaac Sim, ROS 2, and the backend. Failures are surfaced directly
+        so the integration boundary is obvious.
+      </p>
+    </section>
+
+    <section class="toolbar">
+      <div class="panel">
+        <label for="backendUrl">Backend URL</label>
+        <input id="backendUrl" value="http://localhost:8000" />
+        <div class="status-line" id="requestStatus">Idle.</div>
+      </div>
+      <div class="panel">
+        <label for="commandInput">Command</label>
+        <textarea id="commandInput">Pick up trash in the room and put it in the dustbin</textarea>
+      </div>
+    </section>
+
+    <section class="grid">
+      <div class="panel">
+        <h2>Actions</h2>
+        <div class="button-list">
+          <button onclick="getJson('/system/status', 'systemChecks')">System Status</button>
+          <button class="secondary" onclick="getJson('/groot/status', 'grootStatus')">GR00T Status</button>
+          <button class="secondary" onclick="postJson('/groot/smoke', 'grootPlan')">GR00T Smoke</button>
+          <button onclick="postJson('/plan', 'grootPlan')">Plan with real GR00T</button>
+          <button onclick="postJson('/execute_l3', 'executionStatus')">Execute L3</button>
+          <button class="danger" onclick="postStop()">Stop</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>System checks</h3>
+        <pre id="systemChecks">Press "System Status".</pre>
+      </div>
+
+      <div class="panel">
+        <h3>GR00T status</h3>
+        <pre id="grootStatus">Press "GR00T Status".</pre>
+      </div>
+
+      <div class="panel">
+        <h3>Scene state</h3>
+        <pre id="sceneState">Waiting for a plan or execute response.</pre>
+      </div>
+
+      <div class="panel">
+        <h3>GR00T plan</h3>
+        <pre id="grootPlan">Press "Plan with real GR00T".</pre>
+      </div>
+
+      <div class="panel">
+        <h3>ROS 2 publish status</h3>
+        <pre id="ros2Status">Waiting for execution.</pre>
+      </div>
+
+      <div class="panel">
+        <h3>Isaac execution status</h3>
+        <pre id="executionStatus">Press "Execute L3".</pre>
+      </div>
+
+      <div class="panel">
+        <h3>Errors and debug steps</h3>
+        <pre id="errors">No errors yet.</pre>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    function backendUrl() {
+      return document.getElementById("backendUrl").value.replace(/\/$/, "");
+    }
+
+    function commandPayload() {
+      return {
+        command: document.getElementById("commandInput").value.trim(),
+      };
+    }
+
+    function setStatus(message, cssClass = "") {
+      const el = document.getElementById("requestStatus");
+      el.textContent = message;
+      el.className = `status-line ${cssClass}`.trim();
+    }
+
+    function render(targetId, data) {
+      document.getElementById(targetId).textContent =
+        typeof data === "string" ? data : JSON.stringify(data, null, 2);
+    }
+
+    function renderError(error) {
+      render("errors", error);
+      setStatus("Request failed.", "error");
+    }
+
+    async function getJson(path, targetId) {
+      setStatus(`GET ${path} ...`);
+      try {
+        const response = await fetch(`${backendUrl()}${path}`);
+        const data = await response.json();
+        if (!response.ok) {
+          renderError(data);
+          return;
+        }
+        render(targetId, data);
+        setStatus(`GET ${path} complete.`);
+      } catch (error) {
+        renderError({ error: error.message, next_steps: ["Check the backend URL and network path to the GB10."] });
+      }
+    }
+
+    async function postJson(path, targetId) {
+      setStatus(`POST ${path} ...`);
+      try {
+        const response = await fetch(`${backendUrl()}${path}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(commandPayload()),
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          renderError(data);
+          return;
+        }
+
+        render(targetId, data);
+        if (data.observation?.scene) {
+          render("sceneState", data.observation.scene);
+        }
+        if (data.plan?.observation?.scene) {
+          render("sceneState", data.plan.observation.scene);
+        }
+        if (data.ros2_publish_status) {
+          render("ros2Status", data.ros2_publish_status);
+        }
+        if (data.isaac_execution_status) {
+          render("executionStatus", data);
+        }
+        render("errors", "No errors.");
+        setStatus(`POST ${path} complete.`);
+      } catch (error) {
+        renderError({ error: error.message, next_steps: ["Check the backend URL and network path to the GB10."] });
+      }
+    }
+
+    async function postStop() {
+      setStatus("POST /stop ...");
+      try {
+        const response = await fetch(`${backendUrl()}/stop`, { method: "POST" });
+        const data = await response.json();
+        if (!response.ok) {
+          renderError(data);
+          return;
+        }
+        render("ros2Status", data);
+        setStatus("Stop published.", "warning");
+      } catch (error) {
+        renderError({ error: error.message, next_steps: ["Check the backend URL and network path to the GB10."] });
+      }
+    }
+  </script>
+</body>
+</html>

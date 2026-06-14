@@ -1,0 +1,7 @@
+robot_name: "trashbot"
+robot_type: "mobile_manipulator_placeholder"
+base_frame: "robot_base"
+gripper_frame: "gripper"
+preferred_embodiment_notes:
+  - "Map GR00T outputs to the chosen Isaac robot embodiment on GB10."
+  - "Start with navigate, pick, and place primitives before dense action-vector playback."

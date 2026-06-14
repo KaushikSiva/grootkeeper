@@ -1,0 +1,6 @@
+default_command: "Pick up trash in the room and put it in the dustbin"
+task_mode: "l3_simulated_cleanup"
+scene_source: "isaac_pose_placeholder_until_ros_scene_state_is_live"
+notes:
+  - "GR00T-first execution path only."
+  - "Do not silently replace GR00T with mock logic."

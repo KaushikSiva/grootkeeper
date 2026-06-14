@@ -1,0 +1,8 @@
+blocked_target_types:
+  - "hazard"
+release_destination_type: "container"
+reject_non_finite_action_vectors: true
+block_non_ok_plan_status: true
+notes:
+  - "Safety gates run before ROS 2 publish."
+  - "Smoke-only plans are never treated as real L3 execution."
