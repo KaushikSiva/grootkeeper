@@ -51,12 +51,12 @@ def _resolve_g1_usd_path() -> str | None:
 
 def _spawn_g1_reference(stage, g1_prim_path: str, g1_usd_path: str) -> bool:
     try:
-        from pxr import Sdf, UsdGeom
+        from pxr import UsdGeom
     except Exception:
         return False
 
     g1_xform = UsdGeom.Xform.Define(stage, g1_prim_path)
-    g1_xform.GetPrim().GetReferences().AddReference(Sdf.AssetPath(g1_usd_path))
+    g1_xform.GetPrim().GetReferences().AddReference(g1_usd_path)
     return True
 
 
