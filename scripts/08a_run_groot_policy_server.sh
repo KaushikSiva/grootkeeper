@@ -25,6 +25,17 @@ if [[ "$(uname -m)" == "aarch64" && -f "scripts/activate_spark.sh" ]]; then
   source scripts/activate_spark.sh
 fi
 
+# NVIDIA pip wheels on Jetson/SBSA install shared libraries under
+# site-packages/nvidia/*/lib. Add any discovered locations so torch and GR00T
+# can resolve runtime dependencies like cuDSS without extra manual exports.
+while IFS= read -r lib_dir; do
+  [[ -n "${lib_dir}" ]] || continue
+  case ":${LD_LIBRARY_PATH:-}:" in
+    *":${lib_dir}:"*) ;;
+    *) export LD_LIBRARY_PATH="${lib_dir}${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}" ;;
+  esac
+done < <(find .venv/lib -type d -path "*/site-packages/nvidia/*/lib" 2>/dev/null | sort -u)
+
 ARGS=(
   gr00t/eval/run_gr00t_server.py
   --host "${GROOT_SERVER_HOST:-0.0.0.0}"
