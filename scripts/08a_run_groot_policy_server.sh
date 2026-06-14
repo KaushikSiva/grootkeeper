@@ -37,7 +37,8 @@ while IFS= read -r lib_dir; do
 done < <(find .venv/lib -type d -path "*/site-packages/nvidia/*/lib" 2>/dev/null | sort -u)
 
 ARGS=(
-  gr00t/eval/run_gr00t_server.py
+  -m
+  gr00t.eval.run_gr00t_server
   --host "${GROOT_SERVER_HOST:-0.0.0.0}"
   --port "${GROOT_SERVER_PORT:-5555}"
   --device "${GROOT_SERVER_DEVICE:-cuda}"
