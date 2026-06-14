@@ -245,9 +245,18 @@ def _raise_state_dim_error(key: str, actual_dim: int, expected_dim: int) -> None
     )
 
 
+def _default_state_value(key: str, expected_dim: int) -> np.ndarray:
+    if key == "eef_9d" and expected_dim == 9:
+        return np.asarray([0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0], dtype=np.float32)
+    return np.zeros(expected_dim, dtype=np.float32)
+
+
 def _normalize_state_series(value: Any | None, horizon: int, key: str) -> np.ndarray:
     expected_dim = _expected_state_dim(key)
-    array = np.asarray(value if value is not None else np.zeros(expected_dim), dtype=np.float32)
+    array = np.asarray(
+        value if value is not None else _default_state_value(key, expected_dim),
+        dtype=np.float32,
+    )
     if array.ndim == 0:
         array = array.reshape(1)
     actual_dim = int(array.shape[-1]) if array.ndim > 0 else 1
