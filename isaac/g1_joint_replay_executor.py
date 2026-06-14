@@ -97,6 +97,7 @@ class G1JointReplayExecutor:
         self.articulation: Articulation | None = None
         self.arm_joint_names: list[str] = []
         self.arm_joint_indices: list[int] = []
+        self.active_joint_count = 0
         self.frames: list[ReplayFrame] = []
         self.frame_index = 0
         self._app_subscription = None
@@ -138,7 +139,7 @@ class G1JointReplayExecutor:
             per_key = action.get("raw_model_output", {}).get("per_key", {})
             joint_position = per_key.get("joint_position") or []
             gripper_position = per_key.get("gripper_position") or [0.0]
-            if not isinstance(joint_position, list) or len(joint_position) != 7:
+            if not isinstance(joint_position, list) or len(joint_position) < 6:
                 continue
             frames.append(
                 ReplayFrame(
@@ -209,15 +210,16 @@ class G1JointReplayExecutor:
 
         self.articulation = articulation
         self.arm_joint_names, self.arm_joint_indices = self._resolve_arm_joint_indices(dof_names)
-        if len(self.arm_joint_indices) != 7:
-            print("[g1_joint_replay_executor] Could not resolve a 7-joint arm mapping.")
+        if len(self.arm_joint_indices) not in {6, 7}:
+            print("[g1_joint_replay_executor] Could not resolve a 6- or 7-joint arm mapping.")
             print(f"[g1_joint_replay_executor] Available DOFs: {dof_names}")
             print(
                 "[g1_joint_replay_executor] Set G1_ARM_JOINTS_JSON in the Isaac Sim environment "
-                "to the exact 7 joint names for the arm you want to drive."
+                "to the exact 6 or 7 joint names for the arm you want to drive."
             )
             return
 
+        self.active_joint_count = len(self.arm_joint_indices)
         self._initialized = True
         print(f"[g1_joint_replay_executor] Articulation initialized at {self.robot_prim_path}")
         print(f"[g1_joint_replay_executor] Using arm joints: {self.arm_joint_names}")
@@ -238,10 +240,14 @@ class G1JointReplayExecutor:
             chosen = matches[:7]
             return [name for _, name in chosen], [index for index, _ in chosen]
 
+        if len(matches) >= 6:
+            chosen = matches[:6]
+            return [name for _, name in chosen], [index for index, _ in chosen]
+
         return [], []
 
     def _apply_frame(self, frame: ReplayFrame) -> None:
-        if self.articulation is None or len(self.arm_joint_indices) != 7:
+        if self.articulation is None or self.active_joint_count not in {6, 7}:
             return
         try:
             current_positions = list(self.articulation.get_joint_positions())
