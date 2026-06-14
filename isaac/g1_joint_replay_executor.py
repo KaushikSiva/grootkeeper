@@ -9,10 +9,15 @@ from typing import Any
 try:
     import omni.kit.app
     import omni.timeline
-    from omni.isaac.core.articulations import Articulation
+    try:
+        from omni.isaac.core.articulations import Articulation
+    except Exception:
+        from isaacsim.core.prims import SingleArticulation as Articulation
 except Exception as exc:  # pragma: no cover - only importable inside Isaac Sim
     raise RuntimeError(
-        "Run this file inside Isaac Sim Script Editor or Isaac Sim's Python runtime."
+        "Could not import Isaac articulation APIs. Run this inside Isaac Sim Script Editor and "
+        "enable the core Isaac Sim extension set first. Original error: "
+        f"{exc!r}"
     ) from exc
 
 try:
