@@ -136,16 +136,16 @@ def _ensure_demo_environment(stage) -> None:
     _ensure_cube(
         stage,
         "/World/work_table",
-        translate=(0.72, 0.0, 0.34),
-        scale=(0.75, 1.05, 0.04),
+        translate=(0.62, 0.0, 0.36),
+        scale=(0.92, 1.1, 0.04),
         color=(0.42, 0.45, 0.49),
     )
-    for idx, x in enumerate((0.14, 1.3)):
+    for idx, x in enumerate((-0.1, 1.34)):
         for idy, y in enumerate((-0.46, 0.46)):
             _ensure_cube(
                 stage,
                 f"/World/work_table_leg_{idx}_{idy}",
-                translate=(x, y, 0.16),
+                translate=(x, y, 0.17),
                 scale=(0.04, 0.04, 0.32),
                 color=(0.28, 0.3, 0.34),
             )
@@ -188,10 +188,10 @@ def main() -> None:
     UsdGeom.SetStageUpAxis(stage, UsdGeom.Tokens.z)
 
     scene_objects = [
-        {"name": "plastic_bottle", "object_type": "trash", "position": [0.72, 0.14, 0.75]},
-        {"name": "paper_wrapper", "object_type": "trash", "position": [0.84, -0.03, 0.74]},
-        {"name": "paper_cup", "object_type": "trash", "position": [0.61, -0.18, 0.74]},
-        {"name": "dustbin", "object_type": "container", "position": [1.05, -0.42, 0.19]},
+        {"name": "plastic_bottle", "object_type": "trash", "position": [0.54, 0.08, 0.77]},
+        {"name": "paper_wrapper", "object_type": "trash", "position": [0.82, -0.08, 0.74]},
+        {"name": "paper_cup", "object_type": "trash", "position": [0.7, -0.27, 0.75]},
+        {"name": "dustbin", "object_type": "container", "position": [0.98, 0.24, 0.75]},
         {"name": "red_hazard_zone", "object_type": "hazard", "position": [0.38, 0.64, 0.01]},
         {"name": "unitree_g1", "object_type": "robot", "position": [0.0, 0.0, 0.0]},
     ]
@@ -237,9 +237,9 @@ def main() -> None:
         stage,
         "/World/dustbin/body",
         translate=(0.0, 0.0, 0.0),
-        radius=0.12,
-        height=0.38,
-        color=(0.18, 0.8, 0.48),
+        radius=0.08,
+        height=0.22,
+        color=(0.06, 0.06, 0.08),
     )
     _ensure_cylinder(
         stage,
