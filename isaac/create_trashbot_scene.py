@@ -193,7 +193,7 @@ def main() -> None:
         {"name": "paper_cup", "object_type": "trash", "position": [0.7, -0.27, 0.75]},
         {"name": "dustbin", "object_type": "container", "position": [0.98, 0.24, 0.75]},
         {"name": "red_hazard_zone", "object_type": "hazard", "position": [0.38, 0.64, 0.01]},
-        {"name": "unitree_g1", "object_type": "robot", "position": [0.0, 0.0, 0.0]},
+        {"name": "unitree_g1", "object_type": "robot", "position": [0.0, 0.0, 1.0]},
     ]
 
     _ensure_demo_environment(stage)
@@ -264,6 +264,10 @@ def main() -> None:
             "GROOTKEEPER_G1_USD. Creating a placeholder prim at /World/G1 instead."
         )
         _spawn_g1_placeholder(stage, g1_prim_path)
+
+    robot_spec = next((spec for spec in scene_objects if spec["object_type"] == "robot"), None)
+    if robot_spec is not None:
+      _set_xform(stage.GetPrimAtPath(g1_prim_path), translate=robot_spec["position"])
 
     _publish_scene_state_if_ros2_available(scene_objects)
     context.save_as_stage(DEMO_STAGE_PATH)
