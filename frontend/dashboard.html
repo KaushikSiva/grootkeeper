@@ -813,6 +813,18 @@
             <span>Run `Scene Snapshot`, `Plan Replay`, or `Execute L3` to populate the live feed.</span>
           </div>
         </div>
+
+        <div>
+          <h3>Decision Trace</h3>
+          <p>Operational explanation derived from the live payload, not hidden model reasoning.</p>
+        </div>
+
+        <div class="feed-list" id="decisionTrace">
+          <div class="feed-item">
+            <strong>No active trace</strong>
+            <span>Run a plan or execute request to show target choice, destination, safety state, and live phase.</span>
+          </div>
+        </div>
       </aside>
     </section>
 
@@ -902,7 +914,7 @@
         "sceneSourceTag", "phaseValue", "stepValue", "targetValue", "destinationValue",
         "eefValue", "timelineMeta", "timelineBars", "timelineSlider", "objectCount",
         "planHorizon", "executionState", "safetyState", "feedList", "sceneState",
-        "grootPlan", "executionStatus", "systemChecks", "grootStatus", "errors",
+        "grootPlan", "executionStatus", "systemChecks", "grootStatus", "errors", "decisionTrace",
         "backendDot", "grootDot", "rosDot", "replayDot", "backendState", "grootState",
         "rosState", "replayState", "systemBtn", "grootBtn", "sceneBtn", "planBtn",
         "executeBtn", "stopBtn", "playBtn", "resetBtn"
@@ -1262,6 +1274,7 @@
       renderStatusRail();
       renderTimeline();
       renderFeed();
+      renderDecisionTrace();
       renderSceneMap();
       renderPlaybackHud();
       renderRawPanelsIfNeeded();
@@ -1353,6 +1366,56 @@
       }
 
       els.feedList.innerHTML = notes.map((note) => `
+        <div class="feed-item">
+          <strong>${note.title}</strong>
+          <span>${note.detail}</span>
+        </div>
+      `).join("");
+    }
+
+    function renderDecisionTrace() {
+      const playback = appState.playback;
+      const execution = appState.execution;
+      if (!playback || !playback.steps.length) {
+        els.decisionTrace.innerHTML = `
+          <div class="feed-item">
+            <strong>No active trace</strong>
+            <span>Run a plan or execute request to show target choice, destination, safety state, and live phase.</span>
+          </div>`;
+        return;
+      }
+
+      const step = playback.steps[appState.playbackIndex];
+      const target = playback.target?.name || step.action.target || "unknown";
+      const destination = playback.destination?.name || step.action.destination || "unknown";
+      const targetType = playback.target?.object_type || "unknown";
+      const destinationType = playback.destination?.object_type || "unknown";
+      const actionVectorSize = Array.isArray(step.action.action_vector) ? step.action.action_vector.length : 0;
+      const safety = execution?.safety_status || "not evaluated";
+      const rationale = [];
+
+      rationale.push({
+        title: "Target selection",
+        detail: `Current target is ${target} (${targetType}). The backend prefers named trash objects from the live scene and the command text.`,
+      });
+      rationale.push({
+        title: "Destination selection",
+        detail: `Current destination is ${destination} (${destinationType}). Container objects are preferred when the command mentions a bin or dustbin.`,
+      });
+      rationale.push({
+        title: "Execution phase",
+        detail: `Step ${step.index + 1} of ${playback.steps.length} is classified as ${prettyPhase(step.phase).toLowerCase()}. This is inferred from where the step sits in the returned horizon.`,
+      });
+      rationale.push({
+        title: "Safety gate",
+        detail: `Safety status is ${safety}. Execution only proceeds when the backend approves the current target and destination mapping.`,
+      });
+      rationale.push({
+        title: "Policy payload",
+        detail: `This step carries ${actionVectorSize} numeric action values composed from eef_9d, gripper_position, and joint_position.`,
+      });
+
+      els.decisionTrace.innerHTML = rationale.map((note) => `
         <div class="feed-item">
           <strong>${note.title}</strong>
           <span>${note.detail}</span>
